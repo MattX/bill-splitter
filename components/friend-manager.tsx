@@ -6,15 +6,14 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import type { Friend } from "@/types"
-import { Loader2, Plus } from "lucide-react"
+import { Loader2, Plus, Trash2 } from "lucide-react"
 
 interface FriendManagerProps {
   friends: Friend[]
-  onFriendsUpdated: (friends: Friend[]) => void
-  receiptId: number | undefined
+  onFriendsUpdated: (friends: Friend[], shouldSwitchTab?: boolean) => void
 }
 
-export function FriendManager({ friends, onFriendsUpdated, receiptId }: FriendManagerProps) {
+export function FriendManager({ friends, onFriendsUpdated }: FriendManagerProps) {
   const [newFriendName, setNewFriendName] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -31,7 +30,7 @@ export function FriendManager({ friends, onFriendsUpdated, receiptId }: FriendMa
         }
 
         const data = await response.json()
-        onFriendsUpdated(data)
+        onFriendsUpdated(data, false)
       } catch (err) {
         console.error("Error loading friends:", err)
         setError("Failed to load friends")
@@ -68,11 +67,33 @@ export function FriendManager({ friends, onFriendsUpdated, receiptId }: FriendMa
       }
 
       const newFriend = await response.json()
-      onFriendsUpdated([...friends, newFriend])
+      onFriendsUpdated([...friends, newFriend], true)
       setNewFriendName("")
     } catch (err) {
       console.error("Error adding friend:", err)
       setError("Failed to add friend")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleDeleteFriend = async (friendId: number) => {
+    try {
+      setIsLoading(true)
+      setError(null)
+
+      const response = await fetch(`/api/friends?id=${friendId}`, {
+        method: "DELETE",
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to delete friend")
+      }
+
+      onFriendsUpdated(friends.filter((f) => f.id !== friendId), false)
+    } catch (err) {
+      console.error("Error deleting friend:", err)
+      setError("Failed to delete friend")
     } finally {
       setIsLoading(false)
     }
@@ -107,6 +128,14 @@ export function FriendManager({ friends, onFriendsUpdated, receiptId }: FriendMa
             {friends.map((friend) => (
               <li key={friend.id} className="flex items-center justify-between rounded-md border p-3">
                 <span>{friend.name}</span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleDeleteFriend(friend.id)}
+                  disabled={isLoading}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
               </li>
             ))}
           </ul>
@@ -114,7 +143,7 @@ export function FriendManager({ friends, onFriendsUpdated, receiptId }: FriendMa
       </div>
 
       <div className="flex justify-end">
-        <Button onClick={() => onFriendsUpdated(friends)} disabled={friends.length === 0}>
+        <Button onClick={() => onFriendsUpdated(friends, true)} disabled={friends.length === 0}>
           Continue to Item Assignment
         </Button>
       </div>

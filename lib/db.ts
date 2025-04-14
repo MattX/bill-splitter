@@ -92,6 +92,13 @@ export async function getFriends() {
   return result as Friend[]
 }
 
+export async function deleteFriend(id: number) {
+  await sql`
+    DELETE FROM friends
+    WHERE id = ${id}
+  `
+}
+
 // Assignment functions
 export async function createAssignment(assignment: Omit<Assignment, "id" | "createdAt">) {
   const result = await sql`
@@ -118,4 +125,12 @@ export async function getAssignmentsByReceiptId(receiptId: number) {
     WHERE i.receipt_id = ${receiptId}
   `
   return result as Assignment[]
+}
+
+export async function deleteAllAssignmentsForReceipt(receiptId: number) {
+  await sql`
+    DELETE FROM assignments a
+    USING items i
+    WHERE a.item_id = i.id AND i.receipt_id = ${receiptId}
+  `
 }

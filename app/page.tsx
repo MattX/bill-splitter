@@ -22,12 +22,10 @@ export default function Home() {
     setActiveTab("friends")
   }
 
-  const handleFriendsUpdated = (updatedFriends: Friend[]) => {
+  const handleFriendsUpdated = (updatedFriends: Friend[], shouldSwitchTab?: boolean) => {
     setFriends(updatedFriends)
-    if (updatedFriends.length > 0 && items.length > 0) {
+    if (shouldSwitchTab && updatedFriends.length > 0 && items.length > 0) {
       setActiveTab("assign")
-    } else {
-      console.log("no friends or items")
     }
   }
 
@@ -75,7 +73,7 @@ export default function Home() {
             </TabsContent>
 
             <TabsContent value="friends" className="mt-0">
-              <FriendManager friends={friends} onFriendsUpdated={handleFriendsUpdated} receiptId={activeReceipt?.id} />
+              <FriendManager friends={friends} onFriendsUpdated={handleFriendsUpdated} />
             </TabsContent>
 
             <TabsContent value="assign" className="mt-0">
@@ -83,6 +81,7 @@ export default function Home() {
                 items={items}
                 friends={friends}
                 assignments={assignments}
+                receiptId={activeReceipt!.id}
                 onAssignmentsUpdated={handleAssignmentsUpdated}
               />
             </TabsContent>

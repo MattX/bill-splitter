@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { createFriend, getFriends } from "@/lib/db"
+import { createFriend, getFriends, deleteFriend } from "@/lib/db"
 
 export async function GET() {
   try {
@@ -24,5 +24,22 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Error creating friend:", error)
     return NextResponse.json({ error: "Failed to create friend" }, { status: 500 })
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const id = searchParams.get("id")
+
+    if (!id) {
+      return NextResponse.json({ error: "Friend ID is required" }, { status: 400 })
+    }
+
+    await deleteFriend(Number.parseInt(id))
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error("Error deleting friend:", error)
+    return NextResponse.json({ error: "Failed to delete friend" }, { status: 500 })
   }
 }
