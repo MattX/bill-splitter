@@ -6,16 +6,16 @@ const sql = neon(process.env.DATABASE_URL!)
 // Receipt functions
 export async function createReceipt(receipt: Omit<Receipt, "id" | "createdAt">) {
   const result = await sql`
-    INSERT INTO receipts (name, image_url, subtotal, tax, tip, total)
-    VALUES (${receipt.name}, ${receipt.imageUrl}, ${receipt.subtotal}, ${receipt.tax}, ${receipt.tip}, ${receipt.total})
-    RETURNING id, name, image_url as "imageUrl", subtotal, tax, tip, total, created_at as "createdAt"
+    INSERT INTO receipts (name, subtotal, tax, tip, total)
+    VALUES (${receipt.name}, ${receipt.subtotal}, ${receipt.tax}, ${receipt.tip}, ${receipt.total})
+    RETURNING id, name, subtotal, tax, tip, total, created_at as "createdAt"
   `
   return result[0] as Receipt
 }
 
 export async function getReceipt(id: number) {
   const result = await sql`
-    SELECT id, name, image_url as "imageUrl", subtotal, tax, tip, total, created_at as "createdAt"
+    SELECT id, name, subtotal, tax, tip, total, created_at as "createdAt"
     FROM receipts
     WHERE id = ${id}
   `
@@ -47,14 +47,22 @@ export async function getReceiptImages(receiptId: number) {
 export async function createItems(items: Omit<Item, "id" | "createdAt">[]) {
   if (items.length === 0) return []
 
-  const values = items.map((item) => `(${item.receiptId}, ${item.name}, ${item.price})`)
+  // Create a parameterized query with placeholders
+  const placeholders = items.map((_, index) => 
+    `($${index * 3 + 1}, $${index * 3 + 2}, $${index * 3 + 3})`
+  ).join(", ")
+  
+  // Flatten the values into a single array
+  const values = items.flatMap(item => [item.receiptId, item.name, item.price])
+  
   const query = `
     INSERT INTO items (receipt_id, name, price)
-    VALUES ${values.join(", ")}
+    VALUES ${placeholders}
     RETURNING id, receipt_id as "receiptId", name, price, created_at as "createdAt"
   `
 
-  return (await sql.unsafe(query)) as Item[]
+  const result = await sql.query(query, values)
+  return result as Item[]
 }
 
 export async function getItemsByReceiptId(receiptId: number) {

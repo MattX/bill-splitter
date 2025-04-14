@@ -41,7 +41,7 @@ export function FriendManager({ friends, onFriendsUpdated, receiptId }: FriendMa
     }
 
     loadFriends()
-  }, [onFriendsUpdated])
+  }, [])
 
   const handleAddFriend = async (e: React.FormEvent) => {
     e.preventDefault()

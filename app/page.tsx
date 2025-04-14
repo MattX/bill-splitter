@@ -26,6 +26,8 @@ export default function Home() {
     setFriends(updatedFriends)
     if (updatedFriends.length > 0 && items.length > 0) {
       setActiveTab("assign")
+    } else {
+      console.log("no friends or items")
     }
   }
 

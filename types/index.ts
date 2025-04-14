@@ -1,7 +1,7 @@
 export interface Receipt {
   id: number
   name: string
-  imageUrl?: string
+  imageUrl?: string[]
   subtotal: number
   tax: number
   tip: number
