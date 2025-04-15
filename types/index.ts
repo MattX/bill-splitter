@@ -1,5 +1,5 @@
 export interface Receipt {
-  id: number
+  id: string
   name: string
   imageUrl?: string[]
   subtotal: number
@@ -10,23 +10,23 @@ export interface Receipt {
 }
 
 export interface Item {
-  id: number
-  receiptId: number
+  id: string
+  receiptId: string
   name: string
   price: number
   createdAt?: string
 }
 
 export interface Friend {
-  id: number
+  id: string
   name: string
   createdAt?: string
 }
 
 export interface Assignment {
-  id?: number
-  itemId: number
-  friendId: number
+  id?: string
+  itemId: string
+  friendId: string
   createdAt?: string
 }
 
@@ -51,8 +51,8 @@ export interface FriendCost {
 }
 
 export interface ReceiptImage {
-  id: number
-  receiptId: number
+  id: string
+  receiptId: string
   imageUrl: string
   createdAt?: string
 }

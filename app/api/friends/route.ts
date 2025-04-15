@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { createFriend, getFriends, deleteFriend } from "@/lib/db"
+import { createFriend, getFriends, deleteFriend } from "@/lib/mongodb-db"
 
 export async function GET() {
   try {
@@ -36,7 +36,7 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: "Friend ID is required" }, { status: 400 })
     }
 
-    await deleteFriend(Number.parseInt(id))
+    await deleteFriend(id)
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error("Error deleting friend:", error)

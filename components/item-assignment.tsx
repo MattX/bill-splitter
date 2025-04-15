@@ -12,8 +12,8 @@ interface ItemAssignmentProps {
   items: Item[]
   friends: Friend[]
   assignments: Assignment[]
-  receiptId: number
-  onAssignmentsUpdated: (assignments: Assignment[]) => void
+  receiptId: string
+  onAssignmentsUpdated: (assignments: Assignment[], shouldSwitchTab?: boolean) => void
 }
 
 export function ItemAssignment({
@@ -28,11 +28,11 @@ export function ItemAssignment({
   const [error, setError] = useState<string | null>(null)
   const [isDirty, setIsDirty] = useState(false)
 
-  const isAssigned = (itemId: number, friendId: number) => {
+  const isAssigned = (itemId: string, friendId: string) => {
     return assignments.some((a) => a.itemId === itemId && a.friendId === friendId)
   }
 
-  const handleToggleAssignment = (itemId: number, friendId: number) => {
+  const handleToggleAssignment = (itemId: string, friendId: string) => {
     setIsDirty(true)
     if (isAssigned(itemId, friendId)) {
       setAssignments(assignments.filter((a) => !(a.itemId === itemId && a.friendId === friendId)))
@@ -123,8 +123,13 @@ export function ItemAssignment({
 
       <div className="flex justify-end gap-2">
         <Button
-          onClick={saveAssignments}
-          disabled={isLoading || !isDirty || items.length === 0 || friends.length === 0}
+          onClick={async () => {
+            if (isDirty) {
+              await saveAssignments();
+            }
+            onAssignmentsUpdated(assignments);
+          }}
+          disabled={isLoading || items.length === 0 || friends.length === 0 || assignments.length === 0}
         >
           {isLoading ? (
             <>
@@ -132,16 +137,10 @@ export function ItemAssignment({
               Saving...
             </>
           ) : isDirty ? (
-            "Save Changes"
+            "Save & Continue"
           ) : (
-            "All changes saved"
+            "Continue to Cost Breakdown"
           )}
-        </Button>
-        <Button
-          onClick={() => onAssignmentsUpdated(assignments)}
-          disabled={isLoading || items.length === 0 || friends.length === 0 || assignments.length === 0}
-        >
-          Continue to Cost Breakdown
         </Button>
       </div>
     </div>

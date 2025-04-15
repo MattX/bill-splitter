@@ -12,7 +12,7 @@ import { Progress } from "@/components/ui/progress"
 
 interface ReceiptUploaderProps {
   onReceiptProcessed: (receipt: Receipt, items: Item[]) => void
-  receiptId?: number
+  receiptId?: string
 }
 
 export function ReceiptUploader({ onReceiptProcessed, receiptId }: ReceiptUploaderProps) {

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { getReceiptImages } from "@/lib/db"
+import { getReceiptImages } from "@/lib/mongodb-db"
 
 export async function GET(request: Request) {
   try {
@@ -10,7 +10,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Receipt ID is required" }, { status: 400 })
     }
 
-    const images = await getReceiptImages(Number.parseInt(receiptId))
+    const images = await getReceiptImages(receiptId)
     return NextResponse.json(images)
   } catch (error) {
     console.error("Error fetching receipt images:", error)

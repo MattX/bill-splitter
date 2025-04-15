@@ -59,9 +59,11 @@ export default function Home() {
     }
   }
 
-  const handleAssignmentsUpdated = (updatedAssignments: Assignment[]) => {
+  const handleAssignmentsUpdated = (updatedAssignments: Assignment[], shouldSwitchTab?: boolean) => {
     setAssignments(updatedAssignments)
-    setActiveTab("breakdown")
+    if (shouldSwitchTab) {
+      setActiveTab("breakdown")
+    }
   }
 
   return (
@@ -114,7 +116,7 @@ export default function Home() {
                   assignments={assignments}
                   receiptId={activeReceipt.id}
                   key={activeReceipt.id} // Force state to clear when receipt ID changes
-                  onAssignmentsUpdated={handleAssignmentsUpdated}
+                  onAssignmentsUpdated={(assignments, shouldSwitchTab) => handleAssignmentsUpdated(assignments, shouldSwitchTab)}
                 />
               ) : null}
             </TabsContent>

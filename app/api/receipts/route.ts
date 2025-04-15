@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { getReceipt, getItemsByReceiptId, getAssignmentsByReceiptId } from "@/lib/db"
+import { getReceipt, getItemsByReceiptId, getAssignmentsByReceiptId } from "@/lib/mongodb-db"
 
 export async function GET(request: Request) {
   try {
@@ -10,13 +10,13 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Receipt ID is required" }, { status: 400 })
     }
 
-    const receipt = await getReceipt(Number.parseInt(id))
+    const receipt = await getReceipt(id)
     if (!receipt) {
       return NextResponse.json({ error: "Receipt not found" }, { status: 404 })
     }
 
-    const items = await getItemsByReceiptId(receipt.id)
-    const assignments = await getAssignmentsByReceiptId(receipt.id)
+    const items = await getItemsByReceiptId(id)
+    const assignments = await getAssignmentsByReceiptId(id)
 
     return NextResponse.json({ receipt, items, assignments })
   } catch (error) {

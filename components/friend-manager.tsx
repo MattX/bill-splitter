@@ -67,7 +67,7 @@ export function FriendManager({ friends, onFriendsUpdated }: FriendManagerProps)
       }
 
       const newFriend = await response.json()
-      onFriendsUpdated([...friends, newFriend], true)
+      onFriendsUpdated([...friends, newFriend], false)
       setNewFriendName("")
     } catch (err) {
       console.error("Error adding friend:", err)
@@ -77,7 +77,7 @@ export function FriendManager({ friends, onFriendsUpdated }: FriendManagerProps)
     }
   }
 
-  const handleDeleteFriend = async (friendId: number) => {
+  const handleDeleteFriend = async (friendId: string) => {
     try {
       setIsLoading(true)
       setError(null)

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { GoogleGenerativeAI } from "@google/generative-ai"
-import { createReceipt, createItems, addReceiptImage } from "@/lib/db"
+import { createReceipt, createItems, addReceiptImage } from "@/lib/mongodb-db"
 import type { ProcessedReceipt } from "@/types"
 import { put } from "@vercel/blob"
 
