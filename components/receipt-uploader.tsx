@@ -2,25 +2,48 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import type { Receipt, Item } from "@/types"
-import { Loader2, Upload, X } from "lucide-react"
+import type { Receipt, Item, ReceiptImage } from "@/types"
+import { Loader2, Upload, X, Plus } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
 
 interface ReceiptUploaderProps {
   onReceiptProcessed: (receipt: Receipt, items: Item[]) => void
+  receiptId?: number
 }
 
-export function ReceiptUploader({ onReceiptProcessed }: ReceiptUploaderProps) {
+export function ReceiptUploader({ onReceiptProcessed, receiptId }: ReceiptUploaderProps) {
   const [files, setFiles] = useState<File[]>([])
   const [receiptName, setReceiptName] = useState("")
   const [isUploading, setIsUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const [previews, setPreviews] = useState<string[]>([])
+  const [existingImages, setExistingImages] = useState<ReceiptImage[]>([])
+  const [isLoadingImages, setIsLoadingImages] = useState(false)
+
+  useEffect(() => {
+    if (receiptId) {
+      const fetchImages = async () => {
+        try {
+          setIsLoadingImages(true)
+          const response = await fetch(`/api/receipt-images?receiptId=${receiptId}`)
+          if (response.ok) {
+            const data = await response.json()
+            setExistingImages(data)
+          }
+        } catch (error) {
+          console.error("Error fetching receipt images:", error)
+        } finally {
+          setIsLoadingImages(false)
+        }
+      }
+      fetchImages()
+    }
+  }, [receiptId])
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = Array.from(e.target.files || [])
@@ -105,6 +128,52 @@ export function ReceiptUploader({ onReceiptProcessed }: ReceiptUploaderProps) {
     } finally {
       setIsUploading(false)
     }
+  }
+
+  const handleNewReceipt = () => {
+    setFiles([])
+    setReceiptName("")
+    setPreviews([])
+    setError(null)
+    setUploadProgress(0)
+    setIsUploading(false)
+  }
+
+  if (receiptId) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <h2 className="text-lg font-semibold">Current Receipt Images</h2>
+          <Button onClick={handleNewReceipt} variant="outline" size="sm">
+            <Plus className="h-4 w-4 mr-2" />
+            New Receipt
+          </Button>
+        </div>
+
+        {isLoadingImages ? (
+          <div className="flex justify-center items-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        ) : existingImages.length > 0 ? (
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {existingImages.map((image, index) => (
+              <div key={image.id} className="relative">
+                <div className="relative aspect-[3/4] overflow-hidden rounded-md border">
+                  <img
+                    src={image.imageUrl}
+                    alt={`Receipt ${index + 1}`}
+                    className="object-contain w-full h-full"
+                  />
+                </div>
+                <div className="p-2 text-center text-sm text-muted-foreground">Image {index + 1}</div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-center py-8 text-muted-foreground">No receipt images available</p>
+        )}
+      </div>
+    )
   }
 
   return (

@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useSearchParams, useRouter } from "next/navigation"
 import { ReceiptUploader } from "@/components/receipt-uploader"
 import { FriendManager } from "@/components/friend-manager"
 import { ItemAssignment } from "@/components/item-assignment"
@@ -10,16 +11,45 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
 export default function Home() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
   const [activeReceipt, setActiveReceipt] = useState<Receipt | null>(null)
   const [friends, setFriends] = useState<Friend[]>([])
   const [items, setItems] = useState<Item[]>([])
   const [assignments, setAssignments] = useState<Assignment[]>([])
   const [activeTab, setActiveTab] = useState("upload")
+  const [isLoading, setIsLoading] = useState(false)
+
+  // Load receipt from URL parameter on initial load
+  useEffect(() => {
+    const receiptId = searchParams.get("id")
+    if (receiptId) {
+      setIsLoading(true)
+      fetch(`/api/receipts?id=${receiptId}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.receipt) {
+            setActiveReceipt(data.receipt)
+            setItems(data.items)
+            setAssignments(data.assignments)
+            setActiveTab("breakdown")
+          }
+        })
+        .catch((error) => {
+          console.error("Error loading receipt:", error)
+        })
+        .finally(() => {
+          setIsLoading(false)
+        })
+    }
+  }, [searchParams])
 
   const handleReceiptProcessed = async (receipt: Receipt, receiptItems: Item[]) => {
     setActiveReceipt(receipt)
     setItems(receiptItems)
     setActiveTab("friends")
+    // Update URL with receipt ID
+    router.push(`?id=${receipt.id}`)
   }
 
   const handleFriendsUpdated = (updatedFriends: Friend[], shouldSwitchTab?: boolean) => {
@@ -69,7 +99,7 @@ export default function Home() {
           </CardHeader>
           <CardContent>
             <TabsContent value="upload" className="mt-0">
-              <ReceiptUploader onReceiptProcessed={handleReceiptProcessed} />
+              <ReceiptUploader onReceiptProcessed={handleReceiptProcessed} receiptId={activeReceipt?.id} />
             </TabsContent>
 
             <TabsContent value="friends" className="mt-0">
@@ -77,13 +107,16 @@ export default function Home() {
             </TabsContent>
 
             <TabsContent value="assign" className="mt-0">
-              <ItemAssignment
-                items={items}
-                friends={friends}
-                assignments={assignments}
-                receiptId={activeReceipt!.id}
-                onAssignmentsUpdated={handleAssignmentsUpdated}
-              />
+              {activeReceipt ? (
+                <ItemAssignment
+                  items={items}
+                  friends={friends}
+                  assignments={assignments}
+                  receiptId={activeReceipt.id}
+                  key={activeReceipt.id} // Force state to clear when receipt ID changes
+                  onAssignmentsUpdated={handleAssignmentsUpdated}
+                />
+              ) : null}
             </TabsContent>
 
             <TabsContent value="breakdown" className="mt-0">
