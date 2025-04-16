@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useCallback } from "react"
 
 export function useDebounce(
   callback: () => void,
@@ -7,14 +7,18 @@ export function useDebounce(
 ) {
   const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
 
-  useEffect(() => {
+  const reset = useCallback(() => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current)
     }
-
+    
     timeoutRef.current = setTimeout(() => {
       callback()
     }, delay)
+  }, [callback, delay])
+
+  useEffect(() => {
+    reset()
 
     return () => {
       if (timeoutRef.current) {
@@ -22,4 +26,6 @@ export function useDebounce(
       }
     }
   }, dependencies)
+
+  return { reset }
 } 

@@ -6,6 +6,8 @@ import { formatCurrency, calculateFriendCosts } from "@/lib/utils"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useReceipt } from "./receipt-context"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { AlertTriangle } from "lucide-react"
 
 export function CostBreakdown() {
   const { receipt } = useReceipt()
@@ -15,12 +17,33 @@ export function CostBreakdown() {
     return calculateFriendCosts(receipt)
   }, [receipt])
 
+  // Check if there are unassigned items
+  const hasUnassignedItems = useMemo(() => {
+    if (!receipt) return false
+    return receipt.lines.some(l => l.lineType === LineType.ITEM && !receipt.assignments.some(a => a.lineId === l._id))
+  }, [receipt])
+
   if (!receipt) {
     return <div>No receipt data available</div>
   }
 
   return (
     <div className="space-y-6">
+      {hasUnassignedItems && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            The following items are not assigned:
+            <ul>
+              {receipt.lines.filter(l => l.lineType === LineType.ITEM && !receipt.assignments.some(a => a.lineId === l._id)).map(l => (
+                <li key={l._id}>{l.name}</li>
+              ))}
+            </ul>
+            Please assign these items to ensure accurate cost splitting.
+          </AlertDescription>
+        </Alert>
+      )}
+      
       <Tabs defaultValue="summary" className="w-full">
         <TabsList className="grid grid-cols-3 mb-4">
           <TabsTrigger value="summary">Summary</TabsTrigger>

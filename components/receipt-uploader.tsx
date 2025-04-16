@@ -14,11 +14,13 @@ import { useReceipt } from "./receipt-context"
 interface ReceiptUploaderProps {
   onUploadImages: (files: File[], name: string) => Promise<void>
   onResetReceipt?: () => void
+  goToNextTab: () => void
 }
 
 export function ReceiptUploader({ 
   onUploadImages,
   onResetReceipt,
+  goToNextTab,
 }: ReceiptUploaderProps) {
   const [files, setFiles] = useState<File[]>([])
   const [receiptName, setReceiptName] = useState("")
@@ -86,6 +88,7 @@ export function ReceiptUploader({
       
       clearInterval(progressInterval)
       setUploadProgress(100)
+      goToNextTab()
     } catch (err) {
       console.error("Error uploading receipt:", err)
       setError(err instanceof Error ? err.message : "Failed to process receipt")

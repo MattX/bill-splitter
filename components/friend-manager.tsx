@@ -13,9 +13,10 @@ interface FriendManagerProps {
   onAddFriend: (name: string) => Promise<void>
   onDeleteFriend: (friend: IFriend) => Promise<void>
   isLoading: boolean
+  goToNextTab: () => void
 }
 
-export function FriendManager({ onAddFriend, onDeleteFriend, isLoading }: FriendManagerProps) {
+export function FriendManager({ onAddFriend, onDeleteFriend, isLoading, goToNextTab }: FriendManagerProps) {
   const { receipt } = useReceipt()
   const [newFriendName, setNewFriendName] = useState("")
   const [error, setError] = useState<string | null>(null)
@@ -94,6 +95,12 @@ export function FriendManager({ onAddFriend, onDeleteFriend, isLoading }: Friend
             ))}
           </ul>
         )}
+      </div>
+
+      <div className="flex justify-end mt-6">
+        <Button onClick={goToNextTab} disabled={isLoading || receipt?.friends.length === 0}>
+          Continue to Item Assignment
+        </Button>
       </div>
     </div>
   )

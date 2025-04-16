@@ -8,12 +8,14 @@ import { Loader2 } from "lucide-react"
 import { useDebounce } from "../hooks/use-debounce"
 import { useReceipt } from "./receipt-context"
 import type { IAssignment } from "@/types"
+import { LineType } from "@/types/line-type"
 
 interface ItemAssignmentProps {
   onAssignmentsUpdated: (assignments: IAssignment[]) => Promise<void>
+  goToNextTab: () => void
 }
 
-export function ItemAssignment({ onAssignmentsUpdated }: ItemAssignmentProps) {
+export function ItemAssignment({ onAssignmentsUpdated, goToNextTab }: ItemAssignmentProps) {
   const { receipt } = useReceipt()
   const [localAssignments, setLocalAssignments] = useState(receipt?.assignments || [])
   const [isLoading, setIsLoading] = useState(false)
@@ -27,15 +29,6 @@ export function ItemAssignment({ onAssignmentsUpdated }: ItemAssignmentProps) {
 
   const isAssigned = (lineId: string, friendName: string) => {
     return localAssignments.some((a) => a.lineId === lineId && a.friendName === friendName)
-  }
-
-  const handleToggleAssignment = (lineId: string, friendName: string) => {
-    setIsDirty(true)
-    if (isAssigned(lineId, friendName)) {
-      setLocalAssignments(localAssignments.filter((a) => !(a.lineId === lineId && a.friendName === friendName)))
-    } else {
-      setLocalAssignments([...localAssignments, { lineId, friendName }])
-    }
   }
 
   const saveLocalAssignments = useCallback(async () => {
@@ -53,19 +46,29 @@ export function ItemAssignment({ onAssignmentsUpdated }: ItemAssignmentProps) {
     } finally {
       setIsLoading(false)
     }
-  }, [localAssignments, onAssignmentsUpdated, isDirty])
+  }, [localAssignments, onAssignmentsUpdated, isDirty, setIsDirty, setError, setIsLoading])
 
   // Debounce the save operation
-  useDebounce(saveLocalAssignments, 5000, [localAssignments])
+  const { reset: resetDebounce } = useDebounce(saveLocalAssignments, 5000, [localAssignments])
+
+  const handleToggleAssignment = (lineId: string, friendName: string) => {
+    setIsDirty(true)
+    resetDebounce()
+    if (isAssigned(lineId, friendName)) {
+      setLocalAssignments(localAssignments.filter((a) => !(a.lineId === lineId && a.friendName === friendName)))
+    } else {
+      setLocalAssignments([...localAssignments, { lineId, friendName }])
+    }
+  }
 
   // Save on unmount if dirty
-  useEffect(() => {
-    return () => {
-      if (isDirty) {
-        saveLocalAssignments()
-      }
-    }
-  }, [isDirty, saveLocalAssignments])
+  // useEffect(() => {
+  //   return () => {
+  //     if (isDirty) {
+  //       saveLocalAssignments()
+  //     }
+  //   }
+  // }, [isDirty, saveLocalAssignments])
 
   return (
     <div className="space-y-6">
@@ -89,7 +92,7 @@ export function ItemAssignment({ onAssignmentsUpdated }: ItemAssignmentProps) {
                 </tr>
               </thead>
               <tbody>
-                {receipt?.lines.map((item) => (
+                {receipt?.lines.filter(l => l.lineType === LineType.ITEM).map((item) => (
                   <tr key={item._id} className="border-b last:border-0">
                     <td className="px-4 py-3">{item.name}</td>
                     <td className="px-4 py-3 text-right">{formatCurrency(item.price)}</td>
@@ -118,6 +121,7 @@ export function ItemAssignment({ onAssignmentsUpdated }: ItemAssignmentProps) {
             if (isDirty) {
               await saveLocalAssignments()
             }
+            goToNextTab()
           }}
           disabled={isLoading || receipt?.lines.length === 0 || receipt?.friends.length === 0 || localAssignments.length === 0}
         >
