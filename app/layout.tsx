@@ -16,13 +16,18 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
+    // suppressHydrationWarning is used here because next-themes modifies the HTML element's
+    // class and style attributes during hydration, which can cause a mismatch between
+    // server and client rendering. This is expected behavior and safe to suppress
+    // since the theme switching is handled by next-themes.
+    <html lang="en" suppressHydrationWarning>
       <body>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
+          storageKey="bill-splitter-theme"
         >
           <ReceiptProvider>
             {children}

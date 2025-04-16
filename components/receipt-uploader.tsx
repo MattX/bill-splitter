@@ -13,9 +13,10 @@ import { Progress } from "@/components/ui/progress"
 interface ReceiptUploaderProps {
   onReceiptProcessed: (receipt: Receipt, items: Item[]) => void
   receiptId?: string
+  onResetReceipt?: () => void
 }
 
-export function ReceiptUploader({ onReceiptProcessed, receiptId }: ReceiptUploaderProps) {
+export function ReceiptUploader({ onReceiptProcessed, receiptId, onResetReceipt }: ReceiptUploaderProps) {
   const [files, setFiles] = useState<File[]>([])
   const [receiptName, setReceiptName] = useState("")
   const [isUploading, setIsUploading] = useState(false)
@@ -130,21 +131,12 @@ export function ReceiptUploader({ onReceiptProcessed, receiptId }: ReceiptUpload
     }
   }
 
-  const handleNewReceipt = () => {
-    setFiles([])
-    setReceiptName("")
-    setPreviews([])
-    setError(null)
-    setUploadProgress(0)
-    setIsUploading(false)
-  }
-
   if (receiptId) {
     return (
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h2 className="text-lg font-semibold">Current Receipt Images</h2>
-          <Button onClick={handleNewReceipt} variant="outline" size="sm">
+          <Button onClick={onResetReceipt} variant="outline" size="sm">
             <Plus className="h-4 w-4 mr-2" />
             New Receipt
           </Button>

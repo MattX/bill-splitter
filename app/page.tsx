@@ -91,6 +91,16 @@ export default function Home() {
     }
   }
 
+  const handleResetReceipt = () => {
+    setActiveReceipt(null)
+    setItems([])
+    setFriends([])
+    setAssignments([])
+    setActiveTab("upload")
+    // Remove the URL parameter
+    router.replace("/")
+  }
+
   return (
     <main className="container mx-auto py-8 px-4">
       <h1 className="text-3xl font-bold mb-8 text-center">Bill Splitter</h1>
@@ -126,7 +136,11 @@ export default function Home() {
           </CardHeader>
           <CardContent>
             <TabsContent value="upload" className="mt-0">
-              <ReceiptUploader onReceiptProcessed={handleReceiptProcessed} receiptId={activeReceipt?.id} />
+              <ReceiptUploader 
+                onReceiptProcessed={handleReceiptProcessed} 
+                receiptId={activeReceipt?.id} 
+                onResetReceipt={handleResetReceipt}
+              />
             </TabsContent>
 
             <TabsContent value="friends" className="mt-0">
