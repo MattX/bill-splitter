@@ -7,7 +7,6 @@ import { formatCurrency } from "@/lib/utils"
 import { Loader2 } from "lucide-react"
 import { useDebounce } from "../hooks/use-debounce"
 import { useReceipt } from "./receipt-context"
-import { IAssignment } from "@/lib/models/Receipt"
 
 interface ItemAssignmentProps {
   onAssignmentsUpdated: (shouldSwitchTab: boolean) => void

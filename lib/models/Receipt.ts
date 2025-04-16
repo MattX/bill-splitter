@@ -1,10 +1,5 @@
-import mongoose, { Schema, Document } from 'mongoose';
-
-// Define the LineType enum
-export enum LineType {
-  ITEM = 'ITEM',
-  FEE = 'FEE'
-}
+import mongoose, { Schema } from 'mongoose';
+import { LineType } from "@/types/line-type"
 
 // Define the Line schema as a subdocument
 const LineSchema = new Schema({
@@ -32,7 +27,6 @@ const AssignmentSchema = new Schema({
 // Define the Receipt schema
 const ReceiptSchema = new Schema({
   name: { type: String, required: true },
-  subtotal: { type: Number, required: true },
   total: { type: Number, required: true },
   images: [ReceiptImageSchema],
   lines: [LineSchema],
@@ -43,39 +37,3 @@ const ReceiptSchema = new Schema({
 
 // Create and export the model
 export const Receipt = mongoose.models.Receipt || mongoose.model('Receipt', ReceiptSchema);
-
-// Define the TypeScript interface
-export interface IReceipt extends Document {
-  _id: string;
-  name: string;
-  subtotal: number;
-  total: number;
-  images: IReceiptImage[];
-  lines: ILine[];
-  friends: IFriend[];
-  assignments: IAssignment[];
-  createdAt: Date;
-} 
-
-export interface ILine {
-  _id: string;
-  name: string;
-  price: number;
-  lineType: LineType;
-}
-
-export interface IReceiptImage {
-  _id: string;
-  imageUrl: string;
-}
-
-export interface IFriend {
-  _id: string;
-  name: string;
-}
-
-export interface IAssignment {
-  _id?: string;
-  lineId: string;
-  friendName: string;
-}

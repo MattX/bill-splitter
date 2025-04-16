@@ -1,7 +1,7 @@
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
-import type { FriendCost } from "@/types"
-import { IReceipt, ILine, IFriend, IAssignment, LineType } from "@/lib/models"
+import { LineType } from "@/types/line-type"
+import type { FriendCost, IReceipt, ILine, IFriend, IAssignment } from "@/types"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -58,7 +58,7 @@ export function calculateFriendCosts(
     const totalFees = feeLines.reduce((sum, line) => sum + line.price, 0)
     
     // Calculate the proportion of items this friend is responsible for
-    const proportion = itemsSubtotal / receipt.subtotal
+    const proportion = itemsSubtotal / (receipt.total - totalFees)
     const friendFees = totalFees * proportion
     
     const total = itemsSubtotal + friendFees
@@ -74,10 +74,3 @@ export function calculateFriendCosts(
 
   return friendCosts
 }
-
-export function receiptFees(receipt: IReceipt): number {
-  const feeLines = receipt.lines.filter(line => line.lineType === LineType.FEE)
-  const totalFees = feeLines.reduce((sum, line) => sum + line.price, 0)
-  return totalFees
-}
-

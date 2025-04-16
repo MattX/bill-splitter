@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server"
 import { GoogleGenerativeAI } from "@google/generative-ai"
-import { createReceipt, createItems, addReceiptImage } from "@/lib/mongodb-db"
-import type { ProcessedReceipt } from "@/types"
+import { createReceipt } from "@/lib/mongodb-db"
 import { put } from "@vercel/blob"
+import { LineType } from "@/types/line-type"
+import type { IReceipt } from "@/types"
 
 // Initialize the Google Generative AI with your API key
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "")
@@ -34,25 +35,29 @@ export async function POST(request: Request) {
     // Prepare the prompt with instructions for multiple receipts
     const prompt = `
       Analyze these receipt images and extract the following information in JSON format:
-      1. A list of items with their names and prices
-      2. The subtotal
-      3. The tax amount
-      4. The tip amount (if present, otherwise 0)
-      5. The total amount
+      1. A list of items with their names, prices, and line types (ITEM or FEE)
+      2. The total amount
       
-      If there are multiple receipts, combine the information. For example, if one receipt shows
-      the itemized bill and another shows the tip amount, use the tip from the second receipt.
+      For each line item, determine if it's an ITEM (food, drink, product) or a FEE (tax, tip, service charge, delivery fee, etc.)
+      
+      If there are multiple receipts, combine the information.
+      
+      If the image is not a receipt or cannot be processed, return an error object.
       
       Return ONLY a valid JSON object with this structure:
       {
-        "items": [
-          { "name": "Item Name", "price": 10.99 },
+        "lines": [
+          { "name": "Item Name", "price": 10.99, "lineType": "ITEM" },
+          { "name": "Tax", "price": 3.68, "lineType": "FEE" },
+          { "name": "Tip", "price": 9.19, "lineType": "FEE" },
           ...
         ],
-        "subtotal": 45.97,
-        "tax": 3.68,
-        "tip": 9.19,
         "total": 58.84
+      }
+      
+      OR if the image is not a receipt, or you are unable to parse it:
+      {
+        "error": "Unable to process image. Please upload a valid receipt."
       }
     `
 
@@ -75,46 +80,50 @@ export async function POST(request: Request) {
     jsonString = jsonString.replace(/^```json\s*|\s*```$/g, "")
 
     // Parse the JSON
-    const processedReceipt: ProcessedReceipt = JSON.parse(jsonString)
+    const parsedResponse = JSON.parse(jsonString)
 
-    // Save receipt to database
-    const receipt = await createReceipt({
-      name: receiptName || "Unnamed Receipt",
-      subtotal: processedReceipt.subtotal,
-      tax: processedReceipt.tax,
-      tip: processedReceipt.tip,
-      total: processedReceipt.total,
-    })
+    // Check if there's an error
+    if (parsedResponse.error) {
+      return NextResponse.json({ error: parsedResponse.error }, { status: 400 })
+    }
 
-    // Save items to database
-    const itemsToCreate = processedReceipt.items.map((item) => ({
-      receiptId: receipt.id,
-      name: item.name,
-      price: item.price,
-    }))
+    // Calculate subtotal from lines
+    const subtotal = parsedResponse.lines.reduce((sum: number, line: any) => {
+      return sum + line.price
+    }, 0)
 
-    const items = await createItems(itemsToCreate)
-
-    // Upload images to Vercel Blob and store URLs in database
+    // Upload images to Vercel Blob first
     const uploadPromises = imageFiles.map(async (file, index) => {
       // Generate a unique filename
       const timestamp = Date.now()
-      const filename = `receipt-${receipt.id}-${index + 1}-${timestamp}.${file.name.split(".").pop()}`
+      const filename = `receipt-${index + 1}-${timestamp}.${file.name.split(".").pop()}`
 
       // Upload to Vercel Blob
       const blob = await put(filename, file, {
         access: "public",
       })
 
-      // Store the URL in the database
-      await addReceiptImage(receipt.id, blob.url)
-
       return blob.url
     })
 
-    await Promise.all(uploadPromises)
+    const imageUrls = await Promise.all(uploadPromises)
 
-    return NextResponse.json({ receipt, items })
+    // Create receipt with images and lines
+    const receipt = await createReceipt({
+      name: receiptName || "Unnamed Receipt",
+      subtotal: subtotal,
+      total: parsedResponse.total,
+      images: imageUrls.map(url => ({ imageUrl: url })),
+      lines: parsedResponse.lines.map((line: any) => ({
+        name: line.name,
+        price: line.price,
+        lineType: line.lineType as LineType
+      })),
+      friends: [],
+      assignments: []
+    } as unknown as Omit<IReceipt, "_id" | "createdAt">)
+
+    return NextResponse.json({ receipt })
   } catch (error) {
     console.error("Error processing receipt:", error)
     return NextResponse.json({ error: "Failed to process receipt" }, { status: 500 })

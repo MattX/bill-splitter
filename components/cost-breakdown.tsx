@@ -1,7 +1,8 @@
 "use client"
 
 import { useMemo, useState, useEffect } from "react"
-import { LineType, type IReceiptImage } from "@/lib/models"
+import { LineType } from "@/types/line-type"
+import type { IReceiptImage } from "@/types"
 import { formatCurrency, calculateFriendCosts } from "@/lib/utils"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -61,7 +62,7 @@ export function CostBreakdown() {
                 <dl className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <dt>Subtotal:</dt>
-                    <dd className="font-medium">{formatCurrency(receipt.subtotal)}</dd>
+                    <dd className="font-medium">{formatCurrency(receipt.lines.filter(l => l.lineType === LineType.ITEM).reduce((sum, l) => sum + l.price, 0))}</dd>
                   </div>
                   {receipt.lines.filter(l => l.lineType === LineType.FEE).map(l => (
                     <div className="flex justify-between text-sm">

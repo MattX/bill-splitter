@@ -6,7 +6,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import type { IReceipt, ILine, IReceiptImage } from "@/lib/models"
+import type { IReceipt, ILine, IReceiptImage } from "@/types"
 import { Loader2, Upload, X, Plus } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
 

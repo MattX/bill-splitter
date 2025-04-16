@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useReceipt } from "@/components/receipt-context"
 import { useToast } from "@/hooks/use-toast"
-import { ILine, IReceipt, IFriend } from "@/lib/models"
+import type { ILine, IReceipt, IFriend } from "@/types"
 
 export default function Home() {
   const searchParams = useSearchParams()

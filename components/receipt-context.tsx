@@ -1,7 +1,7 @@
 "use client"
 
 import { createContext, useContext, useState, useCallback, ReactNode } from "react"
-import type { IReceipt, ILine, IFriend, IAssignment } from "@/lib/models"
+import type { IReceipt, ILine, IFriend, IAssignment } from "@/types"
 
 interface ReceiptContextType {
   receipt: IReceipt | null

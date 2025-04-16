@@ -1,5 +1,7 @@
 import { connectToDatabase } from './mongodb';
-import { IReceipt, ILine, IFriend, IAssignment, Receipt, LineType, IReceiptImage } from './models';
+import { Receipt } from './models';
+import { LineType } from "@/types/line-type"
+import type { IReceipt, ILine, IFriend, IAssignment, IReceiptImage } from "@/types"
 import mongoose from 'mongoose';
 
 // Receipt functions
@@ -8,7 +10,6 @@ export async function createReceipt(receipt: Omit<IReceipt, "_id" | "createdAt">
   
   const newReceipt = new Receipt({
     name: receipt.name,
-    subtotal: receipt.subtotal,
     total: receipt.total,
     images: receipt.images || [],
     lines: receipt.lines || [],
@@ -22,7 +23,6 @@ export async function createReceipt(receipt: Omit<IReceipt, "_id" | "createdAt">
   return {
     _id: newReceipt._id.toString(),
     name: newReceipt.name,
-    subtotal: newReceipt.subtotal,
     total: newReceipt.total,
     images: newReceipt.images,
     lines: newReceipt.lines,
@@ -42,7 +42,6 @@ export async function getReceipt(id: string) {
   return {
     _id: receipt._id.toString(),
     name: receipt.name,
-    subtotal: receipt.subtotal,
     total: receipt.total,
     images: receipt.images,
     lines: receipt.lines,

@@ -5,7 +5,7 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import type { IFriend } from "@/lib/models"
+import type { IFriend } from "@/types"
 import { Loader2, Plus, Trash2 } from "lucide-react"
 import { useReceipt } from "./receipt-context"
 
