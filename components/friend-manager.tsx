@@ -5,13 +5,13 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import type { Friend } from "@/types"
+import type { IFriend } from "@/lib/models"
 import { Loader2, Plus, Trash2 } from "lucide-react"
 import { useReceipt } from "./receipt-context"
 
 interface FriendManagerProps {
-  friends: Friend[]
-  onFriendsUpdated: (friends: Friend[], shouldSwitchTab?: boolean) => void
+  friends: IFriend[]
+  onFriendsUpdated: (friends: IFriend[], shouldSwitchTab?: boolean) => void
 }
 
 export function FriendManager({ friends, onFriendsUpdated }: FriendManagerProps) {
@@ -63,7 +63,7 @@ export function FriendManager({ friends, onFriendsUpdated }: FriendManagerProps)
         },
         body: JSON.stringify({ 
           name: newFriendName.trim(),
-          receiptId: receipt?.id 
+          receiptId: receipt?._id 
         }),
       })
 
@@ -82,7 +82,7 @@ export function FriendManager({ friends, onFriendsUpdated }: FriendManagerProps)
     }
   }
 
-  const handleDeleteFriend = async (friend: Friend) => {
+  const handleDeleteFriend = async (friend: IFriend) => {
     if (!receipt) {
       setError("No receipt selected")
       return
@@ -92,7 +92,7 @@ export function FriendManager({ friends, onFriendsUpdated }: FriendManagerProps)
       setIsLoading(true)
       setError(null)
 
-      const response = await fetch(`/api/friends?name=${encodeURIComponent(friend.name)}&receiptId=${receipt.id}`, {
+      const response = await fetch(`/api/friends?name=${encodeURIComponent(friend.name)}&receiptId=${receipt._id}`, {
         method: "DELETE",
       })
 
@@ -100,7 +100,7 @@ export function FriendManager({ friends, onFriendsUpdated }: FriendManagerProps)
         throw new Error("Failed to delete friend")
       }
 
-      onFriendsUpdated(friends.filter((f) => f.id !== friend.id), false)
+      onFriendsUpdated(friends.filter((f) => f._id !== friend._id), false)
     } catch (err) {
       console.error("Error deleting friend:", err)
       setError("Failed to delete friend")
@@ -136,7 +136,7 @@ export function FriendManager({ friends, onFriendsUpdated }: FriendManagerProps)
         ) : (
           <ul className="space-y-2">
             {friends.map((friend) => (
-              <li key={friend.id} className="flex items-center justify-between rounded-md border p-3">
+              <li key={friend._id} className="flex items-center justify-between rounded-md border p-3">
                 <span>{friend.name}</span>
                 <Button
                   variant="ghost"

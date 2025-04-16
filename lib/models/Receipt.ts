@@ -75,7 +75,7 @@ export interface IFriend {
 }
 
 export interface IAssignment {
-  _id: string;
+  _id?: string;
   lineId: string;
   friendName: string;
 }

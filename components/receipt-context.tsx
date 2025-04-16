@@ -1,29 +1,29 @@
 "use client"
 
 import { createContext, useContext, useState, useCallback, ReactNode } from "react"
-import type { Receipt, Item, Friend, Assignment } from "@/types"
+import type { IReceipt, ILine, IFriend, IAssignment } from "@/lib/models"
 
 interface ReceiptContextType {
-  receipt: Receipt | null
-  items: Item[]
-  friends: Friend[]
-  assignments: Assignment[]
-  setReceipt: (receipt: Receipt | null) => void
-  setItems: (items: Item[]) => void
-  setFriends: (friends: Friend[]) => void
-  setAssignments: (assignments: Assignment[]) => void
-  saveAssignments: (assignments: Assignment[]) => Promise<void>
+  receipt: IReceipt | null
+  items: ILine[]
+  friends: IFriend[]
+  assignments: IAssignment[]
+  setReceipt: (receipt: IReceipt | null) => void
+  setItems: (items: ILine[]) => void
+  setFriends: (friends: IFriend[]) => void
+  setAssignments: (assignments: IAssignment[]) => void
+  saveAssignments: (assignments: IAssignment[]) => Promise<void>
 }
 
 const ReceiptContext = createContext<ReceiptContextType | undefined>(undefined)
 
 export function ReceiptProvider({ children }: { children: ReactNode }) {
-  const [receipt, setReceipt] = useState<Receipt | null>(null)
-  const [items, setItems] = useState<Item[]>([])
-  const [friends, setFriends] = useState<Friend[]>([])
-  const [assignments, setAssignments] = useState<Assignment[]>([])
+  const [receipt, setReceipt] = useState<IReceipt | null>(null)
+  const [items, setItems] = useState<ILine[]>([])
+  const [friends, setFriends] = useState<IFriend[]>([])
+  const [assignments, setAssignments] = useState<IAssignment[]>([])
 
-  const saveAssignments = useCallback(async (newAssignments: Assignment[]) => {
+  const saveAssignments = useCallback(async (newAssignments: IAssignment[]) => {
     if (!receipt) return
 
     try {
@@ -33,8 +33,8 @@ export function ReceiptProvider({ children }: { children: ReactNode }) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          receiptId: receipt.id,
-          assignments: newAssignments.map(({ itemId, friendName }) => ({ itemId, friendName })),
+          receiptId: receipt._id,
+          assignments: newAssignments.map(({ lineId, friendName }) => ({ lineId, friendName })),
         }),
       })
 

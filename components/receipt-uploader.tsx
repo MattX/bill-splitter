@@ -6,12 +6,12 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import type { Receipt, Item, ReceiptImage } from "@/types"
+import type { IReceipt, ILine, IReceiptImage } from "@/lib/models"
 import { Loader2, Upload, X, Plus } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
 
 interface ReceiptUploaderProps {
-  onReceiptProcessed: (receipt: Receipt, items: Item[]) => void
+  onReceiptProcessed: (receipt: IReceipt, items: ILine[]) => void
   receiptId?: string
   onResetReceipt?: () => void
 }
@@ -23,7 +23,7 @@ export function ReceiptUploader({ onReceiptProcessed, receiptId, onResetReceipt 
   const [uploadProgress, setUploadProgress] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const [previews, setPreviews] = useState<string[]>([])
-  const [existingImages, setExistingImages] = useState<ReceiptImage[]>([])
+  const [existingImages, setExistingImages] = useState<IReceiptImage[]>([])
   const [isLoadingImages, setIsLoadingImages] = useState(false)
 
   useEffect(() => {
@@ -149,7 +149,7 @@ export function ReceiptUploader({ onReceiptProcessed, receiptId, onResetReceipt 
         ) : existingImages.length > 0 ? (
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {existingImages.map((image, index) => (
-              <div key={image.id} className="relative">
+              <div key={image._id} className="relative">
                 <div className="relative aspect-[3/4] overflow-hidden rounded-md border">
                   <img
                     src={image.imageUrl}

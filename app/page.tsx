@@ -6,11 +6,11 @@ import { ReceiptUploader } from "@/components/receipt-uploader"
 import { FriendManager } from "@/components/friend-manager"
 import { ItemAssignment } from "@/components/item-assignment"
 import { CostBreakdown } from "@/components/cost-breakdown"
-import type { Receipt, Friend, Item, Assignment } from "@/types"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useReceipt } from "@/components/receipt-context"
 import { useToast } from "@/hooks/use-toast"
+import { ILine, IReceipt, IFriend } from "@/lib/models"
 
 export default function Home() {
   const searchParams = useSearchParams()
@@ -70,7 +70,7 @@ export default function Home() {
     }
   }, [searchParams, setActiveReceipt, setItems, setAssignments, toast, router])
 
-  const handleReceiptProcessed = async (receipt: Receipt, receiptItems: Item[]) => {
+  const handleReceiptProcessed = async (receipt: IReceipt, receiptItems: ILine[]) => {
     setActiveReceipt(receipt)
     setItems(receiptItems)
     setActiveTab("friends")
@@ -78,7 +78,7 @@ export default function Home() {
     router.push(`?id=${receipt.id}`)
   }
 
-  const handleFriendsUpdated = (updatedFriends: Friend[], shouldSwitchTab?: boolean) => {
+  const handleFriendsUpdated = (updatedFriends: IFriend[], shouldSwitchTab?: boolean) => {
     setFriends(updatedFriends)
     if (shouldSwitchTab && updatedFriends.length > 0 && items.length > 0) {
       setActiveTab("assign")

@@ -74,3 +74,10 @@ export function calculateFriendCosts(
 
   return friendCosts
 }
+
+export function receiptFees(receipt: IReceipt): number {
+  const feeLines = receipt.lines.filter(line => line.lineType === LineType.FEE)
+  const totalFees = feeLines.reduce((sum, line) => sum + line.price, 0)
+  return totalFees
+}
+

@@ -7,6 +7,7 @@ import { formatCurrency } from "@/lib/utils"
 import { Loader2 } from "lucide-react"
 import { useDebounce } from "../hooks/use-debounce"
 import { useReceipt } from "./receipt-context"
+import { IAssignment } from "@/lib/models/Receipt"
 
 interface ItemAssignmentProps {
   onAssignmentsUpdated: (shouldSwitchTab: boolean) => void
@@ -24,16 +25,16 @@ export function ItemAssignment({ onAssignmentsUpdated }: ItemAssignmentProps) {
     setLocalAssignments(globalAssignments)
   }, [globalAssignments])
 
-  const isAssigned = (itemId: string, friendName: string) => {
-    return localAssignments.some((a) => a.itemId === itemId && a.friendName === friendName)
+  const isAssigned = (lineId: string, friendName: string) => {
+    return localAssignments.some((a) => a.lineId === lineId && a.friendName === friendName)
   }
 
-  const handleToggleAssignment = (itemId: string, friendName: string) => {
+  const handleToggleAssignment = (lineId: string, friendName: string) => {
     setIsDirty(true)
-    if (isAssigned(itemId, friendName)) {
-      setLocalAssignments(localAssignments.filter((a) => !(a.itemId === itemId && a.friendName === friendName)))
+    if (isAssigned(lineId, friendName)) {
+      setLocalAssignments(localAssignments.filter((a) => !(a.lineId === lineId && a.friendName === friendName)))
     } else {
-      setLocalAssignments([...localAssignments, { itemId, friendName }])
+      setLocalAssignments([...localAssignments, { lineId, friendName }])
     }
   }
 
@@ -81,7 +82,7 @@ export function ItemAssignment({ onAssignmentsUpdated }: ItemAssignmentProps) {
                   <th className="px-4 py-2 text-left font-medium">Item</th>
                   <th className="px-4 py-2 text-right font-medium">Price</th>
                   {friends.map((friend) => (
-                    <th key={friend.id} className="px-4 py-2 text-center font-medium">
+                    <th key={friend._id} className="px-4 py-2 text-center font-medium">
                       {friend.name}
                     </th>
                   ))}
@@ -89,14 +90,14 @@ export function ItemAssignment({ onAssignmentsUpdated }: ItemAssignmentProps) {
               </thead>
               <tbody>
                 {items.map((item) => (
-                  <tr key={item.id} className="border-b last:border-0">
+                  <tr key={item._id} className="border-b last:border-0">
                     <td className="px-4 py-3">{item.name}</td>
                     <td className="px-4 py-3 text-right">{formatCurrency(item.price)}</td>
                     {friends.map((friend) => (
-                      <td key={friend.id} className="px-4 py-3 text-center">
+                      <td key={friend._id} className="px-4 py-3 text-center">
                         <Checkbox
-                          checked={isAssigned(item.id, friend.name)}
-                          onCheckedChange={() => handleToggleAssignment(item.id, friend.name)}
+                          checked={isAssigned(item._id, friend.name)}
+                          onCheckedChange={() => handleToggleAssignment(item._id, friend.name)}
                           disabled={isLoading}
                         />
                       </td>

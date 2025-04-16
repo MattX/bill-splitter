@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState, useEffect } from "react"
-import type { ReceiptImage } from "@/types"
+import { LineType, type IReceiptImage } from "@/lib/models"
 import { formatCurrency, calculateFriendCosts } from "@/lib/utils"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -10,7 +10,7 @@ import { useReceipt } from "./receipt-context"
 
 export function CostBreakdown() {
   const { receipt, items, friends, assignments } = useReceipt()
-  const [receiptImages, setReceiptImages] = useState<ReceiptImage[]>([])
+  const [receiptImages, setReceiptImages] = useState<IReceiptImage[]>([])
   const [isLoading, setIsLoading] = useState(false)
 
   const friendCosts = useMemo(() => {
@@ -22,7 +22,7 @@ export function CostBreakdown() {
       const fetchReceiptImages = async () => {
         try {
           setIsLoading(true)
-          const response = await fetch(`/api/receipt-images?receiptId=${receipt.id}`)
+          const response = await fetch(`/api/receipt-images?receiptId=${receipt._id}`)
           if (response.ok) {
             const data = await response.json()
             setReceiptImages(data)
@@ -63,14 +63,12 @@ export function CostBreakdown() {
                     <dt>Subtotal:</dt>
                     <dd className="font-medium">{formatCurrency(receipt.subtotal)}</dd>
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <dt>Tax:</dt>
-                    <dd className="font-medium">{formatCurrency(receipt.tax)}</dd>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <dt>Tip:</dt>
-                    <dd className="font-medium">{formatCurrency(receipt.tip)}</dd>
-                  </div>
+                  {receipt.lines.filter(l => l.lineType === LineType.FEE).map(l => (
+                    <div className="flex justify-between text-sm">
+                      <dt>{l.name}:</dt>
+                      <dd className="font-medium">{formatCurrency(l.price)}</dd>
+                    </div>
+                  ))}
                   <div className="flex justify-between border-t pt-2 font-medium">
                     <dt>Total:</dt>
                     <dd>{formatCurrency(receipt.total)}</dd>
@@ -86,7 +84,7 @@ export function CostBreakdown() {
               <CardContent>
                 <dl className="space-y-2">
                   {friendCosts.map((cost) => (
-                    <div key={cost.friend.id} className="flex justify-between text-sm">
+                    <div key={cost.friend._id} className="flex justify-between text-sm">
                       <dt>{cost.friend.name}:</dt>
                       <dd className="font-medium">{formatCurrency(cost.total)}</dd>
                     </div>
@@ -100,7 +98,7 @@ export function CostBreakdown() {
         <TabsContent value="details">
           <div className="space-y-4">
             {friendCosts.map((cost) => (
-              <Card key={cost.friend.id}>
+              <Card key={cost.friend._id}>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base">{cost.friend.name}'s Share</CardTitle>
                 </CardHeader>
@@ -128,12 +126,8 @@ export function CostBreakdown() {
                         <dd className="font-medium">{formatCurrency(cost.itemsSubtotal)}</dd>
                       </div>
                       <div className="flex justify-between text-sm">
-                        <dt>Tax (prorated):</dt>
-                        <dd className="font-medium">{formatCurrency(cost.tax)}</dd>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <dt>Tip (prorated):</dt>
-                        <dd className="font-medium">{formatCurrency(cost.tip)}</dd>
+                        <dt>Fees:</dt>
+                        <dd className="font-medium">{formatCurrency(cost.fees)}</dd>
                       </div>
                       <div className="flex justify-between border-t pt-2 font-medium">
                         <dt>Total:</dt>
@@ -160,7 +154,7 @@ export function CostBreakdown() {
               ) : receiptImages.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {receiptImages.map((image, index) => (
-                    <div key={image.id} className="border rounded-md overflow-hidden">
+                    <div key={image._id} className="border rounded-md overflow-hidden">
                       <div className="aspect-[3/4] relative">
                         <img
                           src={image.imageUrl || "/placeholder.svg"}
