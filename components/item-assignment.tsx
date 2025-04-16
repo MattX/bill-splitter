@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, useEffect } from "react"
+import { useState, useCallback, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { formatCurrency } from "@/lib/utils"
@@ -61,14 +61,20 @@ export function ItemAssignment({ onAssignmentsUpdated, goToNextTab }: ItemAssign
     }
   }
 
-  // Save on unmount if dirty
-  // useEffect(() => {
-  //   return () => {
-  //     if (isDirty) {
-  //       saveLocalAssignments()
-  //     }
-  //   }
-  // }, [isDirty, saveLocalAssignments])
+  // Save on unmount if dirty. Slightly gross trick here
+  const isDirtyRef = useRef(isDirty)
+  const saveLocalAssignmentsRef = useRef(saveLocalAssignments)
+  useEffect(() => {
+    isDirtyRef.current = isDirty
+    saveLocalAssignmentsRef.current = saveLocalAssignments
+  }, [isDirty, saveLocalAssignments])
+  useEffect(() => {
+    return () => {
+      if (isDirtyRef.current) {
+        saveLocalAssignmentsRef.current()
+      }
+    }
+  }, [])
 
   return (
     <div className="space-y-6">
