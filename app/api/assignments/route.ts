@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { createAssignment, getAssignmentsByReceiptId, deleteAllAssignmentsForReceipt, updateAssignmentsForReceipt } from "@/lib/mongodb-db"
+import { getAssignmentsByReceiptId, updateAssignmentsForReceipt } from "@/lib/mongodb-db"
 
 export async function GET(request: Request) {
   try {

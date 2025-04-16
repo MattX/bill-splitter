@@ -1,40 +1,41 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
-// Define the Item schema as a subdocument
-const ItemSchema = new Schema({
+// Define the LineType enum
+export enum LineType {
+  ITEM = 'ITEM',
+  FEE = 'FEE'
+}
+
+// Define the Line schema as a subdocument
+const LineSchema = new Schema({
   name: { type: String, required: true },
   price: { type: Number, required: true },
-  createdAt: { type: Date, default: Date.now }
+  lineType: { type: String, enum: Object.values(LineType), required: true }
 });
 
 // Define the ReceiptImage schema as a subdocument
 const ReceiptImageSchema = new Schema({
-  imageUrl: { type: String, required: true },
-  createdAt: { type: Date, default: Date.now }
+  imageUrl: { type: String, required: true }
 });
 
 // Define the Friend schema as a subdocument
 const FriendSchema = new Schema({
-  name: { type: String, required: true },
-  createdAt: { type: Date, default: Date.now }
+  name: { type: String, required: true }
 });
 
 // Define the Assignment schema as a subdocument
 const AssignmentSchema = new Schema({
-  itemId: { type: Schema.Types.ObjectId, required: true },
-  friendName: { type: String, required: true },
-  createdAt: { type: Date, default: Date.now }
+  lineId: { type: Schema.Types.ObjectId, required: true },
+  friendName: { type: String, required: true }
 });
 
 // Define the Receipt schema
 const ReceiptSchema = new Schema({
   name: { type: String, required: true },
   subtotal: { type: Number, required: true },
-  tax: { type: Number, required: true },
-  tip: { type: Number, required: true },
   total: { type: Number, required: true },
   images: [ReceiptImageSchema],
-  items: [ItemSchema],
+  lines: [LineSchema],
   friends: [FriendSchema],
   assignments: [AssignmentSchema],
   createdAt: { type: Date, default: Date.now }
@@ -48,30 +49,33 @@ export interface IReceipt extends Document {
   _id: string;
   name: string;
   subtotal: number;
-  tax: number;
-  tip: number;
   total: number;
-  images: {
-    _id: string;
-    imageUrl: string;
-    createdAt: Date;
-  }[];
-  items: {
-    _id: string;
-    name: string;
-    price: number;
-    createdAt: Date;
-  }[];
-  friends: {
-    _id: string;
-    name: string;
-    createdAt: Date;
-  }[];
-  assignments: {
-    _id: string;
-    itemId: string;
-    friendName: string;
-    createdAt: Date;
-  }[];
+  images: IReceiptImage[];
+  lines: ILine[];
+  friends: IFriend[];
+  assignments: IAssignment[];
   createdAt: Date;
 } 
+
+export interface ILine {
+  _id: string;
+  name: string;
+  price: number;
+  lineType: LineType;
+}
+
+export interface IReceiptImage {
+  _id: string;
+  imageUrl: string;
+}
+
+export interface IFriend {
+  _id: string;
+  name: string;
+}
+
+export interface IAssignment {
+  _id: string;
+  lineId: string;
+  friendName: string;
+}
