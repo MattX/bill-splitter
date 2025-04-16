@@ -10,10 +10,12 @@ import type { Receipt, Friend, Item, Assignment } from "@/types"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useReceipt } from "@/components/receipt-context"
+import { useToast } from "@/hooks/use-toast"
 
 export default function Home() {
   const searchParams = useSearchParams()
   const router = useRouter()
+  const { toast } = useToast()
   const { 
     receipt: activeReceipt, 
     setReceipt: setActiveReceipt, 
@@ -40,16 +42,33 @@ export default function Home() {
             setItems(data.items)
             setAssignments(data.assignments)
             setActiveTab("breakdown")
+          } else {
+            // Show toast when receipt is not found
+            toast({
+              title: "Receipt not found",
+              description: "The requested receipt could not be found.",
+              variant: "destructive",
+            })
+            // Remove the URL parameter
+            router.replace("/")
           }
         })
         .catch((error) => {
           console.error("Error loading receipt:", error)
+          // Show toast for error
+          toast({
+            title: "Error loading receipt",
+            description: "There was a problem loading the receipt. Please try again.",
+            variant: "destructive",
+          })
+          // Remove the URL parameter
+          router.replace("/")
         })
         .finally(() => {
           setIsLoading(false)
         })
     }
-  }, [searchParams, setActiveReceipt, setItems, setAssignments])
+  }, [searchParams, setActiveReceipt, setItems, setAssignments, toast, router])
 
   const handleReceiptProcessed = async (receipt: Receipt, receiptItems: Item[]) => {
     setActiveReceipt(receipt)

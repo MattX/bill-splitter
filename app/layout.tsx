@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 import { ThemeProvider } from '@/components/theme-provider'
 import { ReceiptProvider } from '@/components/receipt-context'
+import { Toaster } from '@/components/ui/toaster'
 
 export const metadata: Metadata = {
   title: 'v0 App',
@@ -25,6 +26,7 @@ export default function RootLayout({
         >
           <ReceiptProvider>
             {children}
+            <Toaster />
           </ReceiptProvider>
         </ThemeProvider>
       </body>
