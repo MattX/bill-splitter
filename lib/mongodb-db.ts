@@ -138,7 +138,7 @@ export async function createFriend(name: string, receiptId?: string) {
   }
   
   // Add friend to a specific receipt
-  const receipt: IReceipt | null = await Receipt.findById(receiptId);
+  const receipt = await Receipt.findById(receiptId);
   if (!receipt) throw new Error('Receipt not found');
 
   // Check if friend with this name already exists in this receipt

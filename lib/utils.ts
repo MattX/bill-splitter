@@ -15,34 +15,29 @@ export function formatCurrency(amount: number): string {
 }
 
 export function calculateFriendCosts(
-  receipt: IReceipt | null,
-  items: ILine[],
-  friends: IFriend[],
-  assignments: IAssignment[],
+  receipt: IReceipt
 ): FriendCost[] {
-  if (!receipt) return []
-
   const friendCosts: FriendCost[] = []
 
   // Create a map of line assignments
   const lineAssignments = new Map<string, string[]>()
-  items.forEach((item) => {
+  receipt.lines.forEach((item) => {
     lineAssignments.set(item._id, [])
   })
 
-  assignments.forEach((assignment) => {
+  receipt.assignments.forEach((assignment) => {
     const friendNames = lineAssignments.get(assignment.lineId) || []
     friendNames.push(assignment.friendName)
     lineAssignments.set(assignment.lineId, friendNames)
   })
 
   // Calculate costs for each friend
-  friends.forEach((friend) => {
+  receipt.friends.forEach((friend) => {
     const friendItems: ILine[] = []
     let itemsSubtotal = 0
 
     // Find all items assigned to this friend
-    items.forEach((item) => {
+    receipt.lines.forEach((item) => {
       const friendNames = lineAssignments.get(item._id) || []
       if (friendNames.includes(friend.name)) {
         // Calculate the split price for this item

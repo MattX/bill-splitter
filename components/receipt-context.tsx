@@ -1,67 +1,40 @@
 "use client"
 
-import { createContext, useContext, useState, useCallback, ReactNode } from "react"
+import { createContext, useContext, useState, ReactNode, useCallback } from "react"
 import type { IReceipt, ILine, IFriend, IAssignment } from "@/types"
 
 interface ReceiptContextType {
   receipt: IReceipt | null
-  items: ILine[]
-  friends: IFriend[]
-  assignments: IAssignment[]
   setReceipt: (receipt: IReceipt | null) => void
-  setItems: (items: ILine[]) => void
+  setLines: (lines: ILine[]) => void
   setFriends: (friends: IFriend[]) => void
   setAssignments: (assignments: IAssignment[]) => void
-  saveAssignments: (assignments: IAssignment[]) => Promise<void>
 }
 
 const ReceiptContext = createContext<ReceiptContextType | undefined>(undefined)
 
 export function ReceiptProvider({ children }: { children: ReactNode }) {
   const [receipt, setReceipt] = useState<IReceipt | null>(null)
-  const [items, setItems] = useState<ILine[]>([])
-  const [friends, setFriends] = useState<IFriend[]>([])
-  const [assignments, setAssignments] = useState<IAssignment[]>([])
+  const setLines = useCallback((lines: ILine[]) => {
+    setReceipt({ ...receipt!, lines })
+  }, [receipt])
 
-  const saveAssignments = useCallback(async (newAssignments: IAssignment[]) => {
-    if (!receipt) return
+  const setFriends = useCallback((friends: IFriend[]) => {
+    setReceipt({ ...receipt!, friends })
+  }, [receipt])
 
-    try {
-      const response = await fetch("/api/assignments", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          receiptId: receipt._id,
-          assignments: newAssignments.map(({ lineId, friendName }) => ({ lineId, friendName })),
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error("Failed to update assignments")
-      }
-
-      const updatedAssignments = await response.json()
-      setAssignments(updatedAssignments)
-    } catch (err) {
-      console.error("Error saving assignments:", err)
-      throw err
-    }
+  const setAssignments = useCallback((assignments: IAssignment[]) => {
+    setReceipt({ ...receipt!, assignments })
   }, [receipt])
 
   return (
     <ReceiptContext.Provider
       value={{
         receipt,
-        items,
-        friends,
-        assignments,
         setReceipt,
-        setItems,
+        setLines,
         setFriends,
         setAssignments,
-        saveAssignments,
       }}
     >
       {children}
@@ -69,7 +42,7 @@ export function ReceiptProvider({ children }: { children: ReactNode }) {
   )
 }
 
-export function useReceipt() {
+export function useReceipt(): ReceiptContextType {
   const context = useContext(ReceiptContext)
   if (context === undefined) {
     throw new Error("useReceipt must be used within a ReceiptProvider")

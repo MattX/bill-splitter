@@ -8,9 +8,10 @@ import { ItemAssignment } from "@/components/item-assignment"
 import { CostBreakdown } from "@/components/cost-breakdown"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import { useReceipt } from "@/components/receipt-context"
 import { useToast } from "@/hooks/use-toast"
-import type { ILine, IReceipt, IFriend } from "@/types"
+import type { ILine, IReceipt, IFriend, IReceiptImage, IAssignment } from "@/types"
 
 export default function Home() {
   const searchParams = useSearchParams()
@@ -19,15 +20,13 @@ export default function Home() {
   const { 
     receipt: activeReceipt, 
     setReceipt: setActiveReceipt, 
-    friends, 
-    setFriends, 
-    items, 
-    setItems, 
-    assignments, 
+    setFriends,
     setAssignments 
   } = useReceipt()
   const [activeTab, setActiveTab] = useState("upload")
   const [isLoading, setIsLoading] = useState(false)
+  const [isLoadingImages, setIsLoadingImages] = useState(false)
+  const [receiptImages, setReceiptImages] = useState<IReceiptImage[]>([])
 
   // Load receipt from URL parameter on initial load
   useEffect(() => {
@@ -39,9 +38,7 @@ export default function Home() {
         .then((data) => {
           if (data.receipt) {
             setActiveReceipt(data.receipt)
-            setItems(data.items)
-            setAssignments(data.assignments)
-            setActiveTab("breakdown")
+            fetchReceiptImages(receiptId)
           } else {
             // Show toast when receipt is not found
             toast({
@@ -68,34 +65,120 @@ export default function Home() {
           setIsLoading(false)
         })
     }
-  }, [searchParams, setActiveReceipt, setItems, setAssignments, toast, router])
+  }, [searchParams, toast, router])
 
-  const handleReceiptProcessed = async (receipt: IReceipt, receiptItems: ILine[]) => {
-    setActiveReceipt(receipt)
-    setItems(receiptItems)
-    setActiveTab("friends")
-    // Update URL with receipt ID
-    router.push(`?id=${receipt.id}`)
-  }
-
-  const handleFriendsUpdated = (updatedFriends: IFriend[], shouldSwitchTab?: boolean) => {
-    setFriends(updatedFriends)
-    if (shouldSwitchTab && updatedFriends.length > 0 && items.length > 0) {
-      setActiveTab("assign")
+  const fetchReceiptImages = async (receiptId: string) => {
+    try {
+      setIsLoadingImages(true)
+      const response = await fetch(`/api/receipt-images?receiptId=${receiptId}`)
+      if (response.ok) {
+        const data = await response.json()
+        setReceiptImages(data)
+      }
+    } catch (error) {
+      console.error("Error fetching receipt images:", error)
+    } finally {
+      setIsLoadingImages(false)
     }
   }
 
-  const handleAssignmentsUpdated = (shouldSwitchTab: boolean) => {
-    if (shouldSwitchTab) {
+  const handleReceiptProcessed = async (receipt: IReceipt) => {
+    setActiveReceipt(receipt)
+    setActiveTab("friends")
+    // Update URL with receipt ID
+    router.push(`?id=${receipt._id!}`)
+  }
+
+  const handleUploadImages = async (files: File[], name: string) => {
+    const formData = new FormData()
+    formData.append("name", name)
+
+    // Append all files with the same field name
+    files.forEach((file) => {
+      formData.append("images", file)
+    })
+
+    const response = await fetch("/api/process-receipt", {
+      method: "POST",
+      body: formData,
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.error || "Failed to process receipt")
+    }
+
+    const data = await response.json()
+    handleReceiptProcessed(data.receipt)
+  }
+
+  const handleAddFriend = async (name: string) => {
+    if (!activeReceipt) return
+
+    const response = await fetch("/api/friends", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ 
+        name: name,
+        receiptId: activeReceipt._id 
+      }),
+    })
+
+    if (!response.ok) {
+      throw new Error("Failed to add friend")
+    }
+
+    const newFriend = await response.json()
+    setFriends([...activeReceipt.friends, newFriend])
+  }
+
+  const handleDeleteFriend = async (friend: IFriend) => {
+    if (!activeReceipt) return
+
+    const response = await fetch(`/api/friends?name=${encodeURIComponent(friend.name)}&receiptId=${activeReceipt._id}`, {
+      method: "DELETE",
+    })
+
+    if (!response.ok) {
+      throw new Error("Failed to delete friend")
+    }
+
+    setFriends(activeReceipt.friends.filter((f) => f._id !== friend._id))
+  }
+
+  const handleSaveAssignments = async (newAssignments: IAssignment[]) => {
+    if (!activeReceipt) return
+
+    try {
+      const response = await fetch("/api/assignments", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          receiptId: activeReceipt._id,
+          assignments: newAssignments.map(({ lineId, friendName }) => ({ lineId, friendName })),
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to update assignments")
+      }
+
+      const updatedAssignments = await response.json()
+      setAssignments(updatedAssignments)
       setActiveTab("breakdown")
+    } catch (err) {
+      console.error("Error saving assignments:", err)
+      throw err
     }
   }
 
   const handleResetReceipt = () => {
     setActiveReceipt(null)
-    setItems([])
-    setFriends([])
-    setAssignments([])
+    setReceiptImages([])
     setActiveTab("upload")
     // Remove the URL parameter
     router.replace("/")
@@ -111,10 +194,10 @@ export default function Home() {
           <TabsTrigger value="friends" disabled={!activeReceipt}>
             Add Friends
           </TabsTrigger>
-          <TabsTrigger value="assign" disabled={!activeReceipt || friends.length === 0}>
+          <TabsTrigger value="assign" disabled={!activeReceipt || activeReceipt.friends.length === 0}>
             Assign Items
           </TabsTrigger>
-          <TabsTrigger value="breakdown" disabled={!activeReceipt || friends.length === 0 || assignments.length === 0}>
+          <TabsTrigger value="breakdown" disabled={!activeReceipt || activeReceipt.friends.length === 0 || activeReceipt.assignments.length === 0}>
             Cost Breakdown
           </TabsTrigger>
         </TabsList>
@@ -137,27 +220,37 @@ export default function Home() {
           <CardContent>
             <TabsContent value="upload" className="mt-0">
               <ReceiptUploader 
-                onReceiptProcessed={handleReceiptProcessed} 
-                receiptId={activeReceipt?.id} 
+                onUploadImages={handleUploadImages}
                 onResetReceipt={handleResetReceipt}
               />
             </TabsContent>
 
             <TabsContent value="friends" className="mt-0">
-              <FriendManager friends={friends} onFriendsUpdated={handleFriendsUpdated} />
+              <FriendManager 
+                onAddFriend={handleAddFriend}
+                onDeleteFriend={handleDeleteFriend}
+                isLoading={isLoading}
+              />
+              <div className="flex justify-end mt-6">
+                <Button onClick={() => setActiveTab("assign")} disabled={activeReceipt?.friends.length === 0}>
+                  Continue to Item Assignment
+                </Button>
+              </div>
             </TabsContent>
 
             <TabsContent value="assign" className="mt-0">
               {activeReceipt ? (
                 <ItemAssignment
-                  key={activeReceipt.id} // Force state to clear when receipt ID changes
-                  onAssignmentsUpdated={handleAssignmentsUpdated}
+                  key={activeReceipt._id} // Force state to clear when receipt ID changes
+                  onAssignmentsUpdated={handleSaveAssignments}
                 />
               ) : null}
             </TabsContent>
 
             <TabsContent value="breakdown" className="mt-0">
-              <CostBreakdown />
+              {activeReceipt ? (
+                <CostBreakdown   />
+              ) : null}
             </TabsContent>
           </CardContent>
         </Card>

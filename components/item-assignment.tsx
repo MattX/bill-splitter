@@ -7,22 +7,23 @@ import { formatCurrency } from "@/lib/utils"
 import { Loader2 } from "lucide-react"
 import { useDebounce } from "../hooks/use-debounce"
 import { useReceipt } from "./receipt-context"
+import type { IAssignment } from "@/types"
 
 interface ItemAssignmentProps {
-  onAssignmentsUpdated: (shouldSwitchTab: boolean) => void
+  onAssignmentsUpdated: (assignments: IAssignment[]) => Promise<void>
 }
 
 export function ItemAssignment({ onAssignmentsUpdated }: ItemAssignmentProps) {
-  const { items, friends, assignments: globalAssignments, saveAssignments } = useReceipt()
-  const [localAssignments, setLocalAssignments] = useState(globalAssignments)
+  const { receipt } = useReceipt()
+  const [localAssignments, setLocalAssignments] = useState(receipt?.assignments || [])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isDirty, setIsDirty] = useState(false)
 
   // Sync local assignments with global assignments when they change
   useEffect(() => {
-    setLocalAssignments(globalAssignments)
-  }, [globalAssignments])
+    setLocalAssignments(receipt?.assignments || [])
+  }, [receipt])
 
   const isAssigned = (lineId: string, friendName: string) => {
     return localAssignments.some((a) => a.lineId === lineId && a.friendName === friendName)
@@ -44,7 +45,7 @@ export function ItemAssignment({ onAssignmentsUpdated }: ItemAssignmentProps) {
     try {
       setIsLoading(true)
       setError(null)
-      await saveAssignments(localAssignments)
+      await onAssignmentsUpdated(localAssignments)
       setIsDirty(false)
     } catch (err) {
       console.error("Error saving assignments:", err)
@@ -52,7 +53,7 @@ export function ItemAssignment({ onAssignmentsUpdated }: ItemAssignmentProps) {
     } finally {
       setIsLoading(false)
     }
-  }, [localAssignments, saveAssignments, isDirty])
+  }, [localAssignments, onAssignmentsUpdated, isDirty])
 
   // Debounce the save operation
   useDebounce(saveLocalAssignments, 5000, [localAssignments])
@@ -71,7 +72,7 @@ export function ItemAssignment({ onAssignmentsUpdated }: ItemAssignmentProps) {
       <div className="space-y-4">
         <h3 className="text-sm font-medium">Assign Items to Friends</h3>
 
-        {items.length === 0 ? (
+        {receipt?.lines.length === 0 ? (
           <p className="text-sm text-muted-foreground">No items found. Please upload a receipt first.</p>
         ) : (
           <div className="border rounded-md">
@@ -80,7 +81,7 @@ export function ItemAssignment({ onAssignmentsUpdated }: ItemAssignmentProps) {
                 <tr className="border-b">
                   <th className="px-4 py-2 text-left font-medium">Item</th>
                   <th className="px-4 py-2 text-right font-medium">Price</th>
-                  {friends.map((friend) => (
+                  {receipt?.friends.map((friend) => (
                     <th key={friend._id} className="px-4 py-2 text-center font-medium">
                       {friend.name}
                     </th>
@@ -88,11 +89,11 @@ export function ItemAssignment({ onAssignmentsUpdated }: ItemAssignmentProps) {
                 </tr>
               </thead>
               <tbody>
-                {items.map((item) => (
+                {receipt?.lines.map((item) => (
                   <tr key={item._id} className="border-b last:border-0">
                     <td className="px-4 py-3">{item.name}</td>
                     <td className="px-4 py-3 text-right">{formatCurrency(item.price)}</td>
-                    {friends.map((friend) => (
+                    {receipt?.friends.map((friend) => (
                       <td key={friend._id} className="px-4 py-3 text-center">
                         <Checkbox
                           checked={isAssigned(item._id, friend.name)}
@@ -117,9 +118,8 @@ export function ItemAssignment({ onAssignmentsUpdated }: ItemAssignmentProps) {
             if (isDirty) {
               await saveLocalAssignments()
             }
-            onAssignmentsUpdated(true)
           }}
-          disabled={isLoading || items.length === 0 || friends.length === 0 || localAssignments.length === 0}
+          disabled={isLoading || receipt?.lines.length === 0 || receipt?.friends.length === 0 || localAssignments.length === 0}
         >
           {isLoading ? (
             <>

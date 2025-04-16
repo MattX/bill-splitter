@@ -2,7 +2,7 @@ import { Document } from "mongoose"
 import { LineType } from "@/types/line-type"
 
 // Define the TypeScript interface
-export interface IReceipt extends Omit<Document, '_id'> {
+export interface IReceipt {
   _id?: string;
   name: string;
   total: number;

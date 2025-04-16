@@ -15,10 +15,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Receipt not found" }, { status: 404 })
     }
 
-    const lines = await getLinesByReceiptId(id)
-    const assignments = await getAssignmentsByReceiptId(id)
-
-    return NextResponse.json({ receipt, lines, assignments })
+    return NextResponse.json({ receipt })
   } catch (error) {
     console.error("Error fetching receipt:", error)
     return NextResponse.json({ error: "Failed to fetch receipt" }, { status: 500 })

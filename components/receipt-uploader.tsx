@@ -2,49 +2,31 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import type { IReceipt, ILine, IReceiptImage } from "@/types"
+import type { IReceiptImage } from "@/types"
 import { Loader2, Upload, X, Plus } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
+import { useReceipt } from "./receipt-context"
 
 interface ReceiptUploaderProps {
-  onReceiptProcessed: (receipt: IReceipt, items: ILine[]) => void
-  receiptId?: string
+  onUploadImages: (files: File[], name: string) => Promise<void>
   onResetReceipt?: () => void
 }
 
-export function ReceiptUploader({ onReceiptProcessed, receiptId, onResetReceipt }: ReceiptUploaderProps) {
+export function ReceiptUploader({ 
+  onUploadImages,
+  onResetReceipt,
+}: ReceiptUploaderProps) {
   const [files, setFiles] = useState<File[]>([])
   const [receiptName, setReceiptName] = useState("")
   const [isUploading, setIsUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const [previews, setPreviews] = useState<string[]>([])
-  const [existingImages, setExistingImages] = useState<IReceiptImage[]>([])
-  const [isLoadingImages, setIsLoadingImages] = useState(false)
-
-  useEffect(() => {
-    if (receiptId) {
-      const fetchImages = async () => {
-        try {
-          setIsLoadingImages(true)
-          const response = await fetch(`/api/receipt-images?receiptId=${receiptId}`)
-          if (response.ok) {
-            const data = await response.json()
-            setExistingImages(data)
-          }
-        } catch (error) {
-          console.error("Error fetching receipt images:", error)
-        } finally {
-          setIsLoadingImages(false)
-        }
-      }
-      fetchImages()
-    }
-  }, [receiptId])
+  const { receipt } = useReceipt()
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = Array.from(e.target.files || [])
@@ -92,14 +74,6 @@ export function ReceiptUploader({ onReceiptProcessed, receiptId, onResetReceipt 
     setError(null)
 
     try {
-      const formData = new FormData()
-      formData.append("name", receiptName)
-
-      // Append all files with the same field name
-      files.forEach((file) => {
-        formData.append("images", file)
-      })
-
       // Simulate progress during upload and processing
       const progressInterval = setInterval(() => {
         setUploadProgress((prev) => {
@@ -108,21 +82,10 @@ export function ReceiptUploader({ onReceiptProcessed, receiptId, onResetReceipt 
         })
       }, 500)
 
-      const response = await fetch("/api/process-receipt", {
-        method: "POST",
-        body: formData,
-      })
-
+      await onUploadImages(files, receiptName)
+      
       clearInterval(progressInterval)
       setUploadProgress(100)
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || "Failed to process receipt")
-      }
-
-      const data = await response.json()
-      onReceiptProcessed(data.receipt, data.items)
     } catch (err) {
       console.error("Error uploading receipt:", err)
       setError(err instanceof Error ? err.message : "Failed to process receipt")
@@ -131,7 +94,7 @@ export function ReceiptUploader({ onReceiptProcessed, receiptId, onResetReceipt 
     }
   }
 
-  if (receiptId) {
+  if (receipt) {
     return (
       <div className="space-y-6">
         <div className="flex justify-between items-center">
@@ -142,13 +105,9 @@ export function ReceiptUploader({ onReceiptProcessed, receiptId, onResetReceipt 
           </Button>
         </div>
 
-        {isLoadingImages ? (
-          <div className="flex justify-center items-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-          </div>
-        ) : existingImages.length > 0 ? (
+        {receipt.images.length > 0 ? (
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            {existingImages.map((image, index) => (
+            {receipt.images.map((image, index) => (
               <div key={image._id} className="relative">
                 <div className="relative aspect-[3/4] overflow-hidden rounded-md border">
                   <img
