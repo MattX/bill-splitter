@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { createAssignment, getAssignmentsByReceiptId, deleteAllAssignmentsForReceipt } from "@/lib/mongodb-db"
+import { createAssignment, getAssignmentsByReceiptId, deleteAllAssignmentsForReceipt, updateAssignmentsForReceipt } from "@/lib/mongodb-db"
 
 export async function GET(request: Request) {
   try {
@@ -26,15 +26,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Receipt ID and assignments array are required" }, { status: 400 })
     }
 
-    // First, delete all existing assignments for this receipt
-    await deleteAllAssignmentsForReceipt(receiptId)
-
-    // Then create all new assignments
-    const createdAssignments = await Promise.all(
-      assignments.map(({ itemId, friendId }) => createAssignment({ itemId, friendId, receiptId }))
-    )
-
-    return NextResponse.json(createdAssignments)
+    const updatedAssignments = await updateAssignmentsForReceipt(receiptId, assignments)
+    return NextResponse.json(updatedAssignments)
   } catch (error) {
     console.error("Error updating assignments:", error)
     return NextResponse.json({ error: "Failed to update assignments" }, { status: 500 })

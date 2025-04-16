@@ -9,14 +9,21 @@ import { CostBreakdown } from "@/components/cost-breakdown"
 import type { Receipt, Friend, Item, Assignment } from "@/types"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { useReceipt } from "@/components/receipt-context"
 
 export default function Home() {
   const searchParams = useSearchParams()
   const router = useRouter()
-  const [activeReceipt, setActiveReceipt] = useState<Receipt | null>(null)
-  const [friends, setFriends] = useState<Friend[]>([])
-  const [items, setItems] = useState<Item[]>([])
-  const [assignments, setAssignments] = useState<Assignment[]>([])
+  const { 
+    receipt: activeReceipt, 
+    setReceipt: setActiveReceipt, 
+    friends, 
+    setFriends, 
+    items, 
+    setItems, 
+    assignments, 
+    setAssignments 
+  } = useReceipt()
   const [activeTab, setActiveTab] = useState("upload")
   const [isLoading, setIsLoading] = useState(false)
 
@@ -42,7 +49,7 @@ export default function Home() {
           setIsLoading(false)
         })
     }
-  }, [searchParams])
+  }, [searchParams, setActiveReceipt, setItems, setAssignments])
 
   const handleReceiptProcessed = async (receipt: Receipt, receiptItems: Item[]) => {
     setActiveReceipt(receipt)
@@ -59,8 +66,7 @@ export default function Home() {
     }
   }
 
-  const handleAssignmentsUpdated = (updatedAssignments: Assignment[], shouldSwitchTab?: boolean) => {
-    setAssignments(updatedAssignments)
+  const handleAssignmentsUpdated = (shouldSwitchTab: boolean) => {
     if (shouldSwitchTab) {
       setActiveTab("breakdown")
     }
@@ -111,18 +117,14 @@ export default function Home() {
             <TabsContent value="assign" className="mt-0">
               {activeReceipt ? (
                 <ItemAssignment
-                  items={items}
-                  friends={friends}
-                  assignments={assignments}
-                  receiptId={activeReceipt.id}
                   key={activeReceipt.id} // Force state to clear when receipt ID changes
-                  onAssignmentsUpdated={(assignments, shouldSwitchTab) => handleAssignmentsUpdated(assignments, shouldSwitchTab)}
+                  onAssignmentsUpdated={handleAssignmentsUpdated}
                 />
               ) : null}
             </TabsContent>
 
             <TabsContent value="breakdown" className="mt-0">
-              <CostBreakdown receipt={activeReceipt} items={items} friends={friends} assignments={assignments} />
+              <CostBreakdown />
             </TabsContent>
           </CardContent>
         </Card>

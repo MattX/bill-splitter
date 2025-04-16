@@ -1,80 +1,70 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
-import type { Item, Friend, Assignment } from "@/types"
 import { formatCurrency } from "@/lib/utils"
 import { Loader2 } from "lucide-react"
 import { useDebounce } from "../hooks/use-debounce"
+import { useReceipt } from "./receipt-context"
 
 interface ItemAssignmentProps {
-  items: Item[]
-  friends: Friend[]
-  assignments: Assignment[]
-  receiptId: string
-  onAssignmentsUpdated: (assignments: Assignment[], shouldSwitchTab?: boolean) => void
+  onAssignmentsUpdated: (shouldSwitchTab: boolean) => void
 }
 
-export function ItemAssignment({
-  items,
-  friends,
-  assignments: initialAssignments,
-  receiptId,
-  onAssignmentsUpdated,
-}: ItemAssignmentProps) {
-  const [assignments, setAssignments] = useState<Assignment[]>(initialAssignments)
+export function ItemAssignment({ onAssignmentsUpdated }: ItemAssignmentProps) {
+  const { items, friends, assignments: globalAssignments, saveAssignments } = useReceipt()
+  const [localAssignments, setLocalAssignments] = useState(globalAssignments)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isDirty, setIsDirty] = useState(false)
 
+  // Sync local assignments with global assignments when they change
+  useEffect(() => {
+    setLocalAssignments(globalAssignments)
+  }, [globalAssignments])
+
   const isAssigned = (itemId: string, friendId: string) => {
-    return assignments.some((a) => a.itemId === itemId && a.friendId === friendId)
+    return localAssignments.some((a) => a.itemId === itemId && a.friendId === friendId)
   }
 
   const handleToggleAssignment = (itemId: string, friendId: string) => {
     setIsDirty(true)
     if (isAssigned(itemId, friendId)) {
-      setAssignments(assignments.filter((a) => !(a.itemId === itemId && a.friendId === friendId)))
+      setLocalAssignments(localAssignments.filter((a) => !(a.itemId === itemId && a.friendId === friendId)))
     } else {
-      setAssignments([...assignments, { itemId, friendId }])
+      setLocalAssignments([...localAssignments, { itemId, friendId }])
     }
   }
 
-  const saveAssignments = useCallback(async () => {
+  const saveLocalAssignments = useCallback(async () => {
+    if (!isDirty) {
+      return
+    }
     try {
       setIsLoading(true)
       setError(null)
-
-      const response = await fetch("/api/assignments", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          receiptId,
-          assignments: assignments.map(({ itemId, friendId }) => ({ itemId, friendId })),
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error("Failed to update assignments")
-      }
-
-      const updatedAssignments = await response.json()
-      setAssignments(updatedAssignments)
+      await saveAssignments(localAssignments)
       setIsDirty(false)
-      onAssignmentsUpdated(updatedAssignments)
     } catch (err) {
       console.error("Error saving assignments:", err)
       setError("Failed to save assignments")
     } finally {
       setIsLoading(false)
     }
-  }, [assignments, receiptId, onAssignmentsUpdated])
+  }, [localAssignments, saveAssignments, isDirty])
 
   // Debounce the save operation
-  useDebounce(saveAssignments, 5000, [assignments])
+  useDebounce(saveLocalAssignments, 5000, [localAssignments])
+
+  // Save on unmount if dirty
+  useEffect(() => {
+    return () => {
+      if (isDirty) {
+        saveLocalAssignments()
+      }
+    }
+  }, [isDirty, saveLocalAssignments])
 
   return (
     <div className="space-y-6">
@@ -125,11 +115,11 @@ export function ItemAssignment({
         <Button
           onClick={async () => {
             if (isDirty) {
-              await saveAssignments();
+              await saveLocalAssignments()
             }
-            onAssignmentsUpdated(assignments);
+            onAssignmentsUpdated(true)
           }}
-          disabled={isLoading || items.length === 0 || friends.length === 0 || assignments.length === 0}
+          disabled={isLoading || items.length === 0 || friends.length === 0 || localAssignments.length === 0}
         >
           {isLoading ? (
             <>

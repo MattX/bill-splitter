@@ -1,20 +1,15 @@
 "use client"
 
 import { useMemo, useState, useEffect } from "react"
-import type { Receipt, Item, Friend, Assignment, ReceiptImage } from "@/types"
+import type { ReceiptImage } from "@/types"
 import { formatCurrency, calculateFriendCosts } from "@/lib/utils"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Loader2 } from "lucide-react"
+import { useReceipt } from "./receipt-context"
 
-interface CostBreakdownProps {
-  receipt: Receipt | null
-  items: Item[]
-  friends: Friend[]
-  assignments: Assignment[]
-}
-
-export function CostBreakdown({ receipt, items, friends, assignments }: CostBreakdownProps) {
+export function CostBreakdown() {
+  const { receipt, items, friends, assignments } = useReceipt()
   const [receiptImages, setReceiptImages] = useState<ReceiptImage[]>([])
   const [isLoading, setIsLoading] = useState(false)
 

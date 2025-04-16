@@ -244,4 +244,27 @@ export async function deleteAllAssignmentsForReceipt(receiptId: string) {
   
   receipt.assignments = [];
   await receipt.save();
+}
+
+export async function updateAssignmentsForReceipt(receiptId: string, assignments: Omit<Assignment, "id" | "createdAt">[]) {
+  await connectToDatabase();
+  
+  const receipt = await Receipt.findById(receiptId);
+  if (!receipt) throw new Error('Receipt not found');
+  
+  // Replace all assignments with the new ones
+  receipt.assignments = assignments.map(assignment => ({
+    itemId: assignment.itemId,
+    friendId: assignment.friendId,
+  }));
+  
+  await receipt.save();
+  
+  // Convert to the expected format
+  return receipt.assignments.map((assignment: any) => ({
+    id: assignment._id.toString(),
+    itemId: assignment.itemId.toString(),
+    friendId: assignment.friendId.toString(),
+    createdAt: assignment.createdAt.toISOString(),
+  })) as Assignment[];
 } 
