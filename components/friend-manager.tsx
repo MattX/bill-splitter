@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import type { Friend } from "@/types"
 import { Loader2, Plus, Trash2 } from "lucide-react"
+import { useReceipt } from "./receipt-context"
 
 interface FriendManagerProps {
   friends: Friend[]
@@ -14,6 +15,7 @@ interface FriendManagerProps {
 }
 
 export function FriendManager({ friends, onFriendsUpdated }: FriendManagerProps) {
+  const { receipt } = useReceipt()
   const [newFriendName, setNewFriendName] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -59,7 +61,10 @@ export function FriendManager({ friends, onFriendsUpdated }: FriendManagerProps)
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ name: newFriendName.trim() }),
+        body: JSON.stringify({ 
+          name: newFriendName.trim(),
+          receiptId: receipt?.id 
+        }),
       })
 
       if (!response.ok) {
@@ -77,12 +82,17 @@ export function FriendManager({ friends, onFriendsUpdated }: FriendManagerProps)
     }
   }
 
-  const handleDeleteFriend = async (friendId: string) => {
+  const handleDeleteFriend = async (friend: Friend) => {
+    if (!receipt) {
+      setError("No receipt selected")
+      return
+    }
+
     try {
       setIsLoading(true)
       setError(null)
 
-      const response = await fetch(`/api/friends?id=${friendId}`, {
+      const response = await fetch(`/api/friends?name=${encodeURIComponent(friend.name)}&receiptId=${receipt.id}`, {
         method: "DELETE",
       })
 
@@ -90,7 +100,7 @@ export function FriendManager({ friends, onFriendsUpdated }: FriendManagerProps)
         throw new Error("Failed to delete friend")
       }
 
-      onFriendsUpdated(friends.filter((f) => f.id !== friendId), false)
+      onFriendsUpdated(friends.filter((f) => f.id !== friend.id), false)
     } catch (err) {
       console.error("Error deleting friend:", err)
       setError("Failed to delete friend")
@@ -131,7 +141,7 @@ export function FriendManager({ friends, onFriendsUpdated }: FriendManagerProps)
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => handleDeleteFriend(friend.id)}
+                  onClick={() => handleDeleteFriend(friend)}
                   disabled={isLoading}
                 >
                   <Trash2 className="h-4 w-4" />

@@ -24,16 +24,16 @@ export function ItemAssignment({ onAssignmentsUpdated }: ItemAssignmentProps) {
     setLocalAssignments(globalAssignments)
   }, [globalAssignments])
 
-  const isAssigned = (itemId: string, friendId: string) => {
-    return localAssignments.some((a) => a.itemId === itemId && a.friendId === friendId)
+  const isAssigned = (itemId: string, friendName: string) => {
+    return localAssignments.some((a) => a.itemId === itemId && a.friendName === friendName)
   }
 
-  const handleToggleAssignment = (itemId: string, friendId: string) => {
+  const handleToggleAssignment = (itemId: string, friendName: string) => {
     setIsDirty(true)
-    if (isAssigned(itemId, friendId)) {
-      setLocalAssignments(localAssignments.filter((a) => !(a.itemId === itemId && a.friendId === friendId)))
+    if (isAssigned(itemId, friendName)) {
+      setLocalAssignments(localAssignments.filter((a) => !(a.itemId === itemId && a.friendName === friendName)))
     } else {
-      setLocalAssignments([...localAssignments, { itemId, friendId }])
+      setLocalAssignments([...localAssignments, { itemId, friendName }])
     }
   }
 
@@ -95,8 +95,8 @@ export function ItemAssignment({ onAssignmentsUpdated }: ItemAssignmentProps) {
                     {friends.map((friend) => (
                       <td key={friend.id} className="px-4 py-3 text-center">
                         <Checkbox
-                          checked={isAssigned(item.id, friend.id)}
-                          onCheckedChange={() => handleToggleAssignment(item.id, friend.id)}
+                          checked={isAssigned(item.id, friend.name)}
+                          onCheckedChange={() => handleToggleAssignment(item.id, friend.name)}
                           disabled={isLoading}
                         />
                       </td>

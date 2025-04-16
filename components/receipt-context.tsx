@@ -34,7 +34,7 @@ export function ReceiptProvider({ children }: { children: ReactNode }) {
         },
         body: JSON.stringify({
           receiptId: receipt.id,
-          assignments: newAssignments.map(({ itemId, friendId }) => ({ itemId, friendId })),
+          assignments: newAssignments.map(({ itemId, friendName }) => ({ itemId, friendName })),
         }),
       })
 

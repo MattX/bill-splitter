@@ -13,10 +13,16 @@ const ReceiptImageSchema = new Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
+// Define the Friend schema as a subdocument
+const FriendSchema = new Schema({
+  name: { type: String, required: true },
+  createdAt: { type: Date, default: Date.now }
+});
+
 // Define the Assignment schema as a subdocument
 const AssignmentSchema = new Schema({
   itemId: { type: Schema.Types.ObjectId, required: true },
-  friendId: { type: Schema.Types.ObjectId, required: true },
+  friendName: { type: String, required: true },
   createdAt: { type: Date, default: Date.now }
 });
 
@@ -29,7 +35,7 @@ const ReceiptSchema = new Schema({
   total: { type: Number, required: true },
   images: [ReceiptImageSchema],
   items: [ItemSchema],
-  friends: [{ type: Schema.Types.ObjectId, ref: 'Friend' }],
+  friends: [FriendSchema],
   assignments: [AssignmentSchema],
   createdAt: { type: Date, default: Date.now }
 });
@@ -56,11 +62,15 @@ export interface IReceipt extends Document {
     price: number;
     createdAt: Date;
   }[];
-  friends: string[];
+  friends: {
+    _id: string;
+    name: string;
+    createdAt: Date;
+  }[];
   assignments: {
     _id: string;
     itemId: string;
-    friendId: string;
+    friendName: string;
     createdAt: Date;
   }[];
   createdAt: Date;

@@ -26,7 +26,7 @@ export interface Friend {
 export interface Assignment {
   id?: string
   itemId: string
-  friendId: string
+  friendName: string
   createdAt?: string
 }
 

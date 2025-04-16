@@ -24,15 +24,15 @@ export function calculateFriendCosts(
   const friendCosts: FriendCost[] = []
 
   // Create a map of item assignments
-  const itemAssignments = new Map<number, number[]>()
+  const itemAssignments = new Map<string, string[]>()
   items.forEach((item) => {
     itemAssignments.set(item.id, [])
   })
 
   assignments.forEach((assignment) => {
-    const friendIds = itemAssignments.get(assignment.itemId) || []
-    friendIds.push(assignment.friendId)
-    itemAssignments.set(assignment.itemId, friendIds)
+    const friendNames = itemAssignments.get(assignment.itemId) || []
+    friendNames.push(assignment.friendName)
+    itemAssignments.set(assignment.itemId, friendNames)
   })
 
   // Calculate costs for each friend
@@ -42,10 +42,10 @@ export function calculateFriendCosts(
 
     // Find all items assigned to this friend
     items.forEach((item) => {
-      const friendIds = itemAssignments.get(item.id) || []
-      if (friendIds.includes(friend.id)) {
+      const friendNames = itemAssignments.get(item.id) || []
+      if (friendNames.includes(friend.name)) {
         // Calculate the split price for this item
-        const splitPrice = item.price / friendIds.length
+        const splitPrice = item.price / friendNames.length
         const splitItem = { ...item, price: splitPrice }
         friendItems.push(splitItem)
         itemsSubtotal += splitPrice

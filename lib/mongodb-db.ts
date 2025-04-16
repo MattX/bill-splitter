@@ -1,5 +1,5 @@
 import { connectToDatabase } from './mongodb';
-import { Receipt, Friend, IReceipt, IFriend } from './models';
+import { Receipt } from './models';
 import type { Receipt as ReceiptType, Item, Friend as FriendType, Assignment, ReceiptImage } from '@/types';
 
 // Receipt functions
@@ -129,37 +129,124 @@ export async function getItemsByReceiptId(receiptId: string) {
 }
 
 // Friend functions
-export async function createFriend(name: string) {
+export async function createFriend(name: string, receiptId?: string) {
   await connectToDatabase();
   
-  const newFriend = new Friend({ name });
-  await newFriend.save();
-  
-  // Convert to the expected format
-  return {
-    id: newFriend._id.toString(),
-    name: newFriend.name,
-    createdAt: newFriend.createdAt.toISOString(),
-  } as FriendType;
+  if (receiptId) {
+    // Add friend to a specific receipt
+    const receipt = await Receipt.findById(receiptId);
+    if (!receipt) throw new Error('Receipt not found');
+    
+    // Check if friend with this name already exists in this receipt
+    const existingFriend = receipt.friends.find((f: any) => f.name === name);
+    if (existingFriend) {
+      return {
+        id: existingFriend._id.toString(),
+        name: existingFriend.name,
+        createdAt: existingFriend.createdAt.toISOString(),
+      } as FriendType;
+    }
+    
+    // Add new friend
+    receipt.friends.push({ name });
+    await receipt.save();
+    
+    const newFriend = receipt.friends[receipt.friends.length - 1];
+    
+    // Convert to the expected format
+    return {
+      id: newFriend._id.toString(),
+      name: newFriend.name,
+      createdAt: newFriend.createdAt.toISOString(),
+    } as FriendType;
+  } else {
+    // Create a friend in the first receipt that exists
+    const receipt = await Receipt.findOne();
+    if (!receipt) throw new Error('No receipt found to add friend to');
+    
+    // Check if friend with this name already exists in this receipt
+    const existingFriend = receipt.friends.find((f: any) => f.name === name);
+    if (existingFriend) {
+      return {
+        id: existingFriend._id.toString(),
+        name: existingFriend.name,
+        createdAt: existingFriend.createdAt.toISOString(),
+      } as FriendType;
+    }
+    
+    // Add new friend
+    receipt.friends.push({ name });
+    await receipt.save();
+    
+    const newFriend = receipt.friends[receipt.friends.length - 1];
+    
+    // Convert to the expected format
+    return {
+      id: newFriend._id.toString(),
+      name: newFriend.name,
+      createdAt: newFriend.createdAt.toISOString(),
+    } as FriendType;
+  }
 }
 
 export async function getFriends() {
   await connectToDatabase();
   
-  const friends = await Friend.find().sort({ createdAt: 1 });
+  // Get all receipts
+  const receipts = await Receipt.find();
   
-  // Convert to the expected format
-  return friends.map(friend => ({
-    id: friend._id.toString(),
-    name: friend.name,
-    createdAt: friend.createdAt.toISOString(),
-  })) as FriendType[];
+  // Extract unique friends from all receipts
+  const uniqueFriends = new Map();
+  
+  receipts.forEach(receipt => {
+    receipt.friends.forEach((friend: any) => {
+      if (!uniqueFriends.has(friend.name)) {
+        uniqueFriends.set(friend.name, {
+          id: friend._id.toString(),
+          name: friend.name,
+          createdAt: friend.createdAt.toISOString(),
+        });
+      }
+    });
+  });
+  
+  // Convert to array and sort by name
+  return Array.from(uniqueFriends.values()).sort((a, b) => a.name.localeCompare(b.name)) as FriendType[];
 }
 
-export async function deleteFriend(id: string) {
+export async function deleteFriend(name: string, receiptId?: string) {
   await connectToDatabase();
   
-  await Friend.findByIdAndDelete(id);
+  if (receiptId) {
+    // Delete friend from a specific receipt
+    const receipt = await Receipt.findById(receiptId);
+    if (!receipt) throw new Error('Receipt not found');
+    
+    // Remove the friend from the receipt
+    receipt.friends = receipt.friends.filter((f: any) => f.name !== name);
+    
+    // Also remove any assignments for this friend
+    receipt.assignments = receipt.assignments.filter((a: any) => a.friendName !== name);
+    
+    await receipt.save();
+  } else {
+    // Find all receipts that have this friend
+    const receipts = await Receipt.find({
+      'friends.name': name
+    });
+    
+    // Remove the friend from each receipt
+    for (const receipt of receipts) {
+      receipt.friends = receipt.friends.filter((f: any) => f.name !== name);
+      await receipt.save();
+    }
+    
+    // Also remove any assignments for this friend
+    for (const receipt of receipts) {
+      receipt.assignments = receipt.assignments.filter((a: any) => a.friendName !== name);
+      await receipt.save();
+    }
+  }
 }
 
 // Assignment functions
@@ -169,9 +256,13 @@ export async function createAssignment(assignment: Omit<Assignment, "id" | "crea
   const receipt = await Receipt.findById(assignment.receiptId);
   if (!receipt) throw new Error('Receipt not found');
   
+  // Find the friend by name
+  const friend = receipt.friends.find((f: any) => f.name === assignment.friendName);
+  if (!friend) throw new Error('Friend not found in this receipt');
+  
   // Check if assignment already exists
   const existingAssignment = receipt.assignments.find(
-    (a: any) => a.itemId.toString() === assignment.itemId && a.friendId.toString() === assignment.friendId
+    (a: any) => a.itemId.toString() === assignment.itemId && a.friendName === assignment.friendName
   );
   
   if (existingAssignment) {
@@ -179,7 +270,7 @@ export async function createAssignment(assignment: Omit<Assignment, "id" | "crea
     return {
       id: existingAssignment._id.toString(),
       itemId: existingAssignment.itemId.toString(),
-      friendId: existingAssignment.friendId.toString(),
+      friendName: existingAssignment.friendName,
       createdAt: existingAssignment.createdAt.toISOString(),
     } as Assignment;
   }
@@ -187,7 +278,7 @@ export async function createAssignment(assignment: Omit<Assignment, "id" | "crea
   // Add new assignment
   receipt.assignments.push({
     itemId: assignment.itemId,
-    friendId: assignment.friendId,
+    friendName: assignment.friendName,
   });
   
   await receipt.save();
@@ -198,24 +289,24 @@ export async function createAssignment(assignment: Omit<Assignment, "id" | "crea
   return {
     id: newAssignment._id.toString(),
     itemId: newAssignment.itemId.toString(),
-    friendId: newAssignment.friendId.toString(),
+    friendName: newAssignment.friendName,
     createdAt: newAssignment.createdAt.toISOString(),
   } as Assignment;
 }
 
-export async function deleteAssignment(itemId: string, friendId: string) {
+export async function deleteAssignment(itemId: string, friendName: string) {
   await connectToDatabase();
   
   // Find all receipts that might have this assignment
   const receipts = await Receipt.find({
     'assignments.itemId': itemId,
-    'assignments.friendId': friendId,
+    'assignments.friendName': friendName,
   });
   
   // Remove the assignment from each receipt
   for (const receipt of receipts) {
     receipt.assignments = receipt.assignments.filter(
-      (a: any) => a.itemId.toString() !== itemId || a.friendId.toString() !== friendId
+      (a: any) => a.itemId.toString() !== itemId || a.friendName !== friendName
     );
     await receipt.save();
   }
@@ -231,7 +322,7 @@ export async function getAssignmentsByReceiptId(receiptId: string) {
   return receipt.assignments.map((assignment: any) => ({
     id: assignment._id.toString(),
     itemId: assignment.itemId.toString(),
-    friendId: assignment.friendId.toString(),
+    friendName: assignment.friendName,
     createdAt: assignment.createdAt.toISOString(),
   })) as Assignment[];
 }
@@ -255,7 +346,7 @@ export async function updateAssignmentsForReceipt(receiptId: string, assignments
   // Replace all assignments with the new ones
   receipt.assignments = assignments.map(assignment => ({
     itemId: assignment.itemId,
-    friendId: assignment.friendId,
+    friendName: assignment.friendName,
   }));
   
   await receipt.save();
@@ -264,7 +355,7 @@ export async function updateAssignmentsForReceipt(receiptId: string, assignments
   return receipt.assignments.map((assignment: any) => ({
     id: assignment._id.toString(),
     itemId: assignment.itemId.toString(),
-    friendId: assignment.friendId.toString(),
+    friendName: assignment.friendName,
     createdAt: assignment.createdAt.toISOString(),
   })) as Assignment[];
 } 

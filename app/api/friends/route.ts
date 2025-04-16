@@ -13,13 +13,13 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const { name } = await request.json()
+    const { name, receiptId } = await request.json()
 
     if (!name) {
       return NextResponse.json({ error: "Friend name is required" }, { status: 400 })
     }
 
-    const friend = await createFriend(name)
+    const friend = await createFriend(name, receiptId)
     return NextResponse.json(friend)
   } catch (error) {
     console.error("Error creating friend:", error)
@@ -30,13 +30,18 @@ export async function POST(request: Request) {
 export async function DELETE(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
-    const id = searchParams.get("id")
+    const name = searchParams.get("name")
+    const receiptId = searchParams.get("receiptId")
 
-    if (!id) {
-      return NextResponse.json({ error: "Friend ID is required" }, { status: 400 })
+    if (!name) {
+      return NextResponse.json({ error: "Friend name is required" }, { status: 400 })
     }
 
-    await deleteFriend(id)
+    if (!receiptId) {
+      return NextResponse.json({ error: "Receipt ID is required" }, { status: 400 })
+    }
+
+    await deleteFriend(name, receiptId)
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error("Error deleting friend:", error)

@@ -49,7 +49,7 @@ If you have existing data in your SQL database that you want to migrate to Mongo
 ```javascript
 // migration.js
 import { connectToDatabase } from './lib/mongodb';
-import { Receipt, Friend } from './lib/models';
+import { Receipt } from './lib/models';
 import { createReceipt, createItems, addReceiptImage, createFriend } from './lib/mongodb-db';
 import { getReceipt, getItemsByReceiptId, getReceiptImages, getFriends } from './lib/db';
 
@@ -129,25 +129,21 @@ The Bill Splitter application uses the following MongoDB schema:
       createdAt: Date
     }
   ],
-  friends: [ObjectId], // References to Friend documents
+  friends: [
+    {
+      _id: ObjectId,
+      name: String,
+      createdAt: Date
+    }
+  ],
   assignments: [
     {
       _id: ObjectId,
       itemId: ObjectId,
-      friendId: ObjectId,
+      friendName: String,
       createdAt: Date
     }
   ],
-  createdAt: Date
-}
-```
-
-### Friend Collection
-
-```javascript
-{
-  _id: ObjectId,
-  name: String,
   createdAt: Date
 }
 ```
