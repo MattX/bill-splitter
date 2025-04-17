@@ -6,6 +6,7 @@ import { useReceipt } from "./receipt-context"
 import { LineType } from "@/types/line-type"
 import type { ILine } from "@/types"
 import { formatCurrency } from "@/lib/utils"
+import { useTheme } from "next-themes"
 
 interface ReceiptLineEditorProps {
     goToNextTab: () => void
@@ -13,6 +14,7 @@ interface ReceiptLineEditorProps {
 
 export function ReceiptLineEditor({ goToNextTab }: ReceiptLineEditorProps) {
   const { receipt, setLines } = useReceipt()
+  const { resolvedTheme } = useTheme()
   const rows = receipt?.lines || []
 
   const columns: Column<ILine>[] = [
@@ -26,15 +28,17 @@ export function ReceiptLineEditor({ goToNextTab }: ReceiptLineEditorProps) {
       key: "price",
       name: "Price",
       editable: true,
-      width: 150,
-      renderCell: ({ row }: { row: ILine }) => formatCurrency(row.price),
+      width: 100,
+      renderCell: ({ row }: { row: ILine }) => (
+        <div className="text-right">{formatCurrency(row.price)}</div>
+      ),
       renderEditCell: ({ row, onRowChange }: { row: ILine; onRowChange: (row: ILine) => void }) => (
         <input
           type="number"
           step="0.01"
           value={row.price}
           onChange={(e) => onRowChange({ ...row, price: parseFloat(e.target.value) })}
-          className="w-full h-full px-2 py-1 border rounded"
+          className="w-full h-full px-2 py-1 border rounded text-right"
         />
       ),
     },
@@ -42,7 +46,7 @@ export function ReceiptLineEditor({ goToNextTab }: ReceiptLineEditorProps) {
       key: "lineType",
       name: "Type",
       editable: true,
-      width: 150,
+      width: 100,
       renderCell: ({ row }: { row: ILine }) => row.lineType === LineType.ITEM ? "Item" : "Fee",
       renderEditCell: ({ row, onRowChange }: { row: ILine; onRowChange: (row: ILine) => void }) => (
         <select
@@ -72,7 +76,7 @@ export function ReceiptLineEditor({ goToNextTab }: ReceiptLineEditorProps) {
           columns={columns}
           rows={rows}
           onRowsChange={handleRowsChange}
-          className="h-full rdg-light"
+          className={`h-full ${resolvedTheme === 'dark' ? 'rdg-dark' : 'rdg-light'}`}
         />
       </div>
       <div className="flex justify-end">
