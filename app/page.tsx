@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button"
 import { useReceipt } from "@/components/receipt-context"
 import { useToast } from "@/hooks/use-toast"
 import type { IReceipt, IFriend, IAssignment } from "@/types"
+import { ReceiptLineEditor } from "@/components/receipt-line-editor"
 
 export default function Home() {
   const searchParams = useSearchParams()
@@ -168,8 +169,11 @@ export default function Home() {
       <h1 className="text-3xl font-bold mb-8 text-center">Bill Splitter</h1>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full max-w-4xl mx-auto">
-        <TabsList className="grid grid-cols-4 mb-8">
+        <TabsList className="grid grid-cols-5 mb-8">
           <TabsTrigger value="upload">Upload Receipt</TabsTrigger>
+          <TabsTrigger value="edit" disabled={!activeReceipt}>
+            Edit Lines
+          </TabsTrigger>
           <TabsTrigger value="friends" disabled={!activeReceipt}>
             Add Friends
           </TabsTrigger>
@@ -185,12 +189,14 @@ export default function Home() {
           <CardHeader>
             <CardTitle>
               {activeTab === "upload" && "Upload Receipt"}
+              {activeTab === "edit" && "Edit Receipt Lines"}
               {activeTab === "friends" && "Add Friends"}
               {activeTab === "assign" && "Assign Items to Friends"}
               {activeTab === "breakdown" && "Cost Breakdown"}
             </CardTitle>
             <CardDescription>
               {activeTab === "upload" && "Upload a receipt image to get started"}
+              {activeTab === "edit" && "Edit receipt line items if they weren't parsed correctly"}
               {activeTab === "friends" && "Add the friends who shared this meal"}
               {activeTab === "assign" && "Select who had each item"}
               {activeTab === "breakdown" && "See how much each person owes"}
@@ -201,8 +207,14 @@ export default function Home() {
               <ReceiptUploader 
                 onUploadImages={handleUploadImages}
                 onResetReceipt={handleResetReceipt}
-                goToNextTab={() => setActiveTab("friends")}
+                goToNextTab={() => setActiveTab("edit")}
               />
+            </TabsContent>
+
+            <TabsContent value="edit" className="mt-0">
+              {activeReceipt ? (
+                <ReceiptLineEditor goToNextTab={() => setActiveTab("friends")} />
+              ) : null}
             </TabsContent>
 
             <TabsContent value="friends" className="mt-0">

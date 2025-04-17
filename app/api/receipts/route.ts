@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { getReceipt, getLinesByReceiptId, getAssignmentsByReceiptId } from "@/lib/mongodb-db"
+import { getReceipt } from "@/lib/mongodb-db"
 
 export async function GET(request: Request) {
   try {
