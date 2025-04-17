@@ -6,8 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "migrate:friends": "ts-node scripts/migrate-friends.ts"
+    "lint": "next lint"
   },
   "dependencies": {
     "@google/generative-ai": "latest",

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { ReceiptUploader } from "@/components/receipt-uploader"
 import { FriendManager } from "@/components/friend-manager"
@@ -14,7 +14,7 @@ import { useToast } from "@/hooks/use-toast"
 import type { IReceipt, IFriend, IAssignment } from "@/types"
 import { ReceiptLineEditor } from "@/components/receipt-line-editor"
 
-export default function Home() {
+function HomeContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const { toast } = useToast()
@@ -245,5 +245,13 @@ export default function Home() {
         </Card>
       </Tabs>
     </main>
+  )
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <HomeContent />
+    </Suspense>
   )
 }
